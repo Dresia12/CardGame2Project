@@ -1,0 +1,3965 @@
+main.py  |  CardGame2/main.py
+from CardGame2.sets.base_set import get_base_set
+from CardGame2.boosters.booster import generate_booster
+from CardGame2.models.player import Player
+from CardGame2.combat.battle import Battle
+import random
+
+def main():
+    # Générer la collection de base
+    card_pool = get_base_set()
+    print("--- OUVERTURE D'UN BOOSTER ---")
+    booster = generate_booster(card_pool)
+    for card in booster:
+        print(card)
+
+    # Créer deux joueurs avec un deck de 5 cartes chacun (tirées du booster)
+    deck1 = random.sample(booster, min(5, len(booster)))
+    deck2 = random.sample(booster, min(5, len(booster)))
+    player1 = Player("Alice", deck=deck1)
+    player2 = Player("Bob", deck=deck2)
+
+    # Simuler un combat
+    battle = Battle(player1, player2)
+    print(f"\n--- DEBUT DU COMBAT : {player1.name} vs {player2.name} ---")
+    round_count = 0
+    while not battle.check_victory() and round_count < 10:
+        battle.play_round()
+        print(f"Tour {battle.turn}: {battle.active_player} VS {battle.opponent}")
+        round_count += 1
+    if battle.winner:
+        print(f"\nVictoire de {battle.winner.name}!")
+    else:
+        print("\nMatch nul ou fin de la démo.")
+
+if __name__ == "__main__":
+    main() 
+data_manager.py  |  CardGame2/data_manager.py
+import os
+import json
+
+DATA_FILE = os.path.join(os.path.dirname(__file__), 'player_data.json')
+
+DEFAULT_DECK = {
+    "hero": None,    # dict représentant le héros et sa personnalisation
+    "units": [],     # liste de 4 noms ou dicts d'unités
+    "cards": []      # liste des autres cartes
+}
+
+DEFAULT_DATA = {
+    "player_name": None,
+    "currency": 0,
+    "collection": {},  # {card_name: count}
+    "decks": [
+        DEFAULT_DECK.copy(),
+        DEFAULT_DECK.copy(),
+        DEFAULT_DECK.copy(),
+        DEFAULT_DECK.copy(),
+        DEFAULT_DECK.copy()
+    ],
+}
+
+def merge_with_default(data):
+    merged = DEFAULT_DATA.copy()
+    merged.update(data)
+    # Pour les decks, s'assurer qu'il y a bien 5 decks
+    if 'decks' in data:
+        merged['decks'] = data['decks'] + [DEFAULT_DECK.copy()] * (5 - len(data['decks']))
+        merged['decks'] = merged['decks'][:5]
+    return merged
+
+class DataManager:
+    def __init__(self):
+        self.data = DEFAULT_DATA.copy()
+        self.load()
+
+    def load(self):
+        if os.path.exists(DATA_FILE):
+            with open(DATA_FILE, 'r', encoding='utf-8') as f:
+                try:
+                    loaded = json.load(f)
+                    self.data = merge_with_default(loaded)
+                except Exception:
+                    self.data = DEFAULT_DATA.copy()
+        else:
+            self.save()
+
+    def save(self):
+        with open(DATA_FILE, 'w', encoding='utf-8') as f:
+            json.dump(self.data, f, indent=2, ensure_ascii=False)
+
+    def set_player_name(self, name):
+        self.data["player_name"] = name
+        self.save()
+
+    def get_player_name(self):
+        return self.data.get("player_name", None)
+
+    def get_currency(self):
+        return self.data.get("currency", 0)
+
+    def add_currency(self, amount):
+        self.data["currency"] = self.data.get("currency", 0) + amount
+        self.save()
+
+    def spend_currency(self, amount):
+        if self.data.get("currency", 0) >= amount:
+            self.data["currency"] -= amount
+            self.save()
+            return True
+        return False
+
+    def get_collection(self):
+        return self.data.get("collection", {})
+
+    def add_to_collection(self, card_name, count=1):
+        col = self.data.setdefault("collection", {})
+        if card_name in col:
+            col[card_name] += count
+        else:
+            col[card_name] = count
+        self.save()
+
+    def set_collection(self, collection):
+        self.data["collection"] = collection
+        self.save()
+
+    def get_decks(self):
+        return self.data.get("decks", [DEFAULT_DECK.copy() for _ in range(5)])
+
+    def set_deck(self, idx, deck):
+        decks = self.data.setdefault("decks", [DEFAULT_DECK.copy() for _ in range(5)])
+        while len(decks) < 5:
+            decks.append(DEFAULT_DECK.copy())
+        decks[idx] = deck
+        self.save()
+
+    def reset(self):
+        self.data = DEFAULT_DATA.copy()
+        self.save()
+
+    def add_game_history(self, entry: dict):
+        path = os.path.join(os.path.dirname(__file__), 'history.json')
+        try:
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+            else:
+                data = []
+        except Exception:
+            data = []
+        data.append(entry)
+        data = data[-10:]
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+    def get_game_history(self):
+        path = os.path.join(os.path.dirname(__file__), 'history.json')
+        try:
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+        except Exception:
+            pass
+        return []
+
+    def get_all_player_names(self):
+        # Cherche tous les fichiers player_data_<name>.json dans le dossier
+        base = os.path.dirname(__file__)
+        names = []
+        for f in os.listdir(base):
+            if f.startswith('player_data_') and f.endswith('.json'):
+                names.append(f[len('player_data_'):-len('.json')])
+        return names
+
+    def reset_player_data(self, name):
+        # Crée ou écrase le fichier player_data_<name>.json avec un profil vierge
+        base = os.path.dirname(__file__)
+        path = os.path.join(base, f'player_data_{name}.json')
+        data = DEFAULT_DATA.copy()
+        data['player_name'] = name
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        # Réinitialise aussi le profil courant
+        self.data = data.copy()
+        self.save() 
+ui_app.py  |  CardGame2/ui_app.py
+import sys
+import os
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QStackedWidget, QMenuBar, QMenu, QAction, QColorDialog, QDesktopWidget
+)
+from PyQt5.QtCore import QTranslator, QLocale, QPropertyAnimation
+from CardGame2.screens.login_screen import LoginScreen
+from CardGame2.screens.main_menu import MainMenu
+from CardGame2.screens.play_menu import PlayMenu
+from CardGame2.screens.deck_menu import DeckMenu
+from CardGame2.screens.shop_menu import ShopMenu
+from CardGame2.screens.collection_menu import CollectionMenu
+from CardGame2.screens.combat_screen import CombatScreen
+from CardGame2.ui.theme_manager import ThemeManager
+from CardGame2.ui.components import NotificationPopup
+from CardGame2.utils.user_config import load_user_config, save_user_config
+from typing import Optional
+
+# Handler global d'exception Python
+import traceback
+def global_excepthook(exctype, value, tb):
+    msg = f"[CRITICAL] Unhandled exception: {exctype.__name__}: {value}\n" + ''.join(traceback.format_tb(tb))
+    try:
+        with open(os.path.join(os.path.dirname(__file__), '../debug_cardgame2.log'), 'a', encoding='utf-8') as f:
+            f.write(msg + '\n')
+    except Exception:
+        pass
+    try:
+        # Affiche une popup si possible (si QApplication existe)
+        app = QApplication.instance()
+        if app is not None:
+            NotificationPopup(f"Erreur critique : {value}", 6000).show()
+    except Exception:
+        pass
+    # Affiche aussi sur la console
+    print(msg, file=sys.stderr)
+
+sys.excepthook = global_excepthook
+
+def log_debug(msg):
+    with open(os.path.join(os.path.dirname(__file__), '../debug_cardgame2.log'), 'a', encoding='utf-8') as f:
+        f.write(msg + '\n')
+
+class DebugStackedWidget(QStackedWidget):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.currentChanged.connect(self._on_current_changed)
+    def _on_current_changed(self, idx):
+        widget = self.widget(idx)
+        log_debug(f"[DEBUG] DebugStackedWidget.currentChanged: idx={idx}, widget={widget}, type={type(widget)}, id={id(widget)}")
+
+# --- Écrans de l'application ---
+class MainWindow(QMainWindow):
+    def __init__(self):
+        log_debug("[DEBUG] MainWindow.__init__ début")
+        super().__init__()
+        self.setWindowTitle("CardGame2 - PyQt5 Edition")
+        screen = QDesktopWidget().screenGeometry()
+        w = int(screen.width() * 0.9)
+        h = int(screen.height() * 0.9)
+        self.resize(w, h)
+        self.setMinimumSize(1000, 700)
+        self.stack = DebugStackedWidget()
+        self.login_screen = LoginScreen(self.stack)
+        self.stack.addWidget(self.login_screen)
+        self.setCentralWidget(self.stack)
+        # Menu de thème
+        self.menu_bar = QMenuBar(self)
+        self.setMenuBar(self.menu_bar)
+        theme_menu = QMenu("Thème", self)
+        self.menu_bar.addMenu(theme_menu)
+        action_light = QAction("Clair", self)
+        action_dark = QAction("Sombre", self)
+        action_contrast = QAction("Contraste élevé", self)
+        action_color = QAction("Couleur principale...", self)
+        theme_menu.addAction(action_light)
+        theme_menu.addAction(action_dark)
+        theme_menu.addAction(action_contrast)
+        theme_menu.addSeparator()
+        theme_menu.addAction(action_color)
+        action_light.triggered.connect(lambda: ThemeManager.apply(ThemeManager.LIGHT))
+        action_dark.triggered.connect(lambda: ThemeManager.apply(ThemeManager.DARK))
+        action_contrast.triggered.connect(lambda: ThemeManager.apply(ThemeManager.CONTRAST))
+        action_color.triggered.connect(self.choose_accent_color)
+        ThemeManager.apply(ThemeManager.DARK)
+        # Menu aide
+        help_menu = QMenu("Aide", self)
+        self.menu_bar.addMenu(help_menu)
+        action_help = QAction("Aide contextuelle", self)
+        help_menu.addAction(action_help)
+        action_help.triggered.connect(self.show_help_popup)
+        # Menu langue
+        lang_menu = QMenu("Langue", self)
+        self.menu_bar.addMenu(lang_menu)
+        action_fr = QAction("Français", self)
+        action_en = QAction("English", self)
+        lang_menu.addAction(action_fr)
+        lang_menu.addAction(action_en)
+        action_fr.triggered.connect(lambda: self.set_language('fr'))
+        action_en.triggered.connect(lambda: self.set_language('en'))
+        # Menu daltonien
+        daltonian_menu = QMenu("Accessibilité", self)
+        self.menu_bar.addMenu(daltonian_menu)
+        action_daltonian = QAction("Mode daltonien", self)
+        action_daltonian.setCheckable(True)
+        action_daltonian.setChecked(False)
+        daltonian_menu.addAction(action_daltonian)
+        self.daltonian_mode = False
+        action_daltonian.triggered.connect(self.toggle_daltonian_mode)
+        # Toggle grands caractères
+        action_bigfont = QAction("Grands caractères", self)
+        action_bigfont.setCheckable(True)
+        action_bigfont.setChecked(False)
+        daltonian_menu.addAction(action_bigfont)
+        self.bigfont_mode = False
+        action_bigfont.triggered.connect(self.toggle_bigfont_mode)
+        self.translator = QTranslator()
+        self.current_lang = 'fr'
+        config = load_user_config()
+        self.current_theme = config.get('theme', 'DARK')
+        ThemeManager.apply(getattr(ThemeManager, self.current_theme, ThemeManager.DARK))
+        log_debug(f"[DEBUG] MainWindow.__init__ fin, self={self}")
+
+    def animate_transition(self, new_widget):
+        log_debug(f"[DEBUG] animate_transition appelée avec new_widget={new_widget}")
+        old_widget = self.stack.currentWidget()
+        log_debug(f"[DEBUG] Widget courant avant transition : {old_widget}")
+        if old_widget:
+            anim = QPropertyAnimation(old_widget, b"windowOpacity")
+            anim.setDuration(250)
+            anim.setStartValue(1.0)
+            anim.setEndValue(0.0)
+            def on_anim_finished():
+                log_debug("[DEBUG] Animation de fade-out terminée, appel _show_new_widget_with_fade")
+                self._show_new_widget_with_fade(new_widget)
+            anim.finished.connect(on_anim_finished)
+            anim.start()
+            self._current_anim = anim
+            log_debug("[DEBUG] Animation de fade-out lancée")
+        else:
+            log_debug("[DEBUG] Pas d'ancien widget, appel direct _show_new_widget_with_fade")
+            self._show_new_widget_with_fade(new_widget)
+
+    def _show_new_widget_with_fade(self, new_widget):
+        log_debug(f"[DEBUG] _show_new_widget_with_fade appelée avec new_widget={new_widget}")
+        log_debug(f"[DEBUG] Avant setCurrentWidget : stack.currentWidget={self.stack.currentWidget()} (type={type(self.stack.currentWidget())}, id={id(self.stack.currentWidget())})")
+        self.stack.setCurrentWidget(new_widget)
+        log_debug(f"[DEBUG] Après setCurrentWidget : stack.currentWidget={self.stack.currentWidget()} (type={type(self.stack.currentWidget())}, id={id(self.stack.currentWidget())})")
+        new_widget.setWindowOpacity(0.0)
+        anim = QPropertyAnimation(new_widget, b"windowOpacity")
+        anim.setDuration(250)
+        anim.setStartValue(0.0)
+        anim.setEndValue(1.0)
+        anim.start()
+        self._current_anim = anim
+        log_debug("[DEBUG] Animation de fade-in lancée")
+
+    def go_to_menu(self, player_name):
+        log_debug(f"[DEBUG] go_to_menu appelé avec player_name={player_name}")
+        # Vérifie si un MainMenu existe déjà dans le stack
+        for i in range(self.stack.count()):
+            widget = self.stack.widget(i)
+            if isinstance(widget, MainMenu) and getattr(widget, 'player_name', None) == player_name:
+                self.animate_transition(widget)
+                self.player_name = player_name
+                widget.set_current_theme(self.current_theme)
+                log_debug(f"[DEBUG] Widget courant après setCurrentWidget : {self.stack.currentWidget()} (type={type(self.stack.currentWidget())}, id={id(self.stack.currentWidget())})")
+                log_debug(f"[DEBUG] MainMenu visible ? {self.menu.isVisible()}")
+                return
+        # Sinon, on crée un nouveau MainMenu
+        self.menu = MainMenu(player_name, self.stack)
+        self.menu.player_name = player_name  # Ajoute cet attribut si besoin
+        self.stack.addWidget(self.menu)
+        self.stack.setCurrentWidget(self.menu)
+        self.animate_transition(self.menu)
+        self.player_name = player_name
+        self.menu.set_current_theme(self.current_theme)
+        log_debug(f"[DEBUG] Widget courant après setCurrentWidget : {self.stack.currentWidget()} (type={type(self.stack.currentWidget())}, id={id(self.stack.currentWidget())})")
+        log_debug(f"[DEBUG] MainMenu visible ? {self.menu.isVisible()}")
+
+    def go_to_play_menu(self, player_name):
+        log_debug(f"[DEBUG] go_to_play_menu appelé avec player_name={player_name}")
+        for i in range(self.stack.count()):
+            widget = self.stack.widget(i)
+            if isinstance(widget, PlayMenu) and getattr(widget, 'player_name', None) == player_name:
+                self.animate_transition(widget)
+                if hasattr(widget, 'set_current_theme'):
+                    widget.set_current_theme(self.current_theme)
+                return
+        self.play_menu = PlayMenu(player_name, self.stack)
+        self.play_menu.player_name = player_name
+        self.stack.addWidget(self.play_menu)
+        self.animate_transition(self.play_menu)
+        if hasattr(self.play_menu, 'set_current_theme'):
+            self.play_menu.set_current_theme(self.current_theme)
+
+    def go_to_deck_menu(self, player_name):
+        log_debug(f"[DEBUG] go_to_deck_menu appelé avec player_name={player_name}")
+        for i in range(self.stack.count()):
+            widget = self.stack.widget(i)
+            if isinstance(widget, DeckMenu) and getattr(widget, 'player_name', None) == player_name:
+                self.animate_transition(widget)
+                if hasattr(widget, 'set_current_theme'):
+                    widget.set_current_theme(self.current_theme)
+                return
+        self.deck_menu = DeckMenu(player_name, self.stack)
+        self.deck_menu.player_name = player_name
+        self.stack.addWidget(self.deck_menu)
+        self.animate_transition(self.deck_menu)
+        if hasattr(self.deck_menu, 'set_current_theme'):
+            self.deck_menu.set_current_theme(self.current_theme)
+
+    def go_to_shop_menu(self, player_name):
+        log_debug(f"[DEBUG] go_to_shop_menu appelé avec player_name={player_name}")
+        for i in range(self.stack.count()):
+            widget = self.stack.widget(i)
+            if isinstance(widget, ShopMenu) and getattr(widget, 'player_name', None) == player_name:
+                self.animate_transition(widget)
+                if hasattr(widget, 'set_current_theme'):
+                    widget.set_current_theme(self.current_theme)
+                return
+        self.shop_menu = ShopMenu(player_name, self.stack)
+        self.shop_menu.player_name = player_name
+        self.stack.addWidget(self.shop_menu)
+        self.animate_transition(self.shop_menu)
+        if hasattr(self.shop_menu, 'set_current_theme'):
+            self.shop_menu.set_current_theme(self.current_theme)
+
+    def go_to_collection_menu(self, player_name):
+        log_debug(f"[DEBUG] go_to_collection_menu appelé avec player_name={player_name}")
+        for i in range(self.stack.count()):
+            widget = self.stack.widget(i)
+            if isinstance(widget, CollectionMenu) and getattr(widget, 'player_name', None) == player_name:
+                self.animate_transition(widget)
+                if hasattr(widget, 'set_current_theme'):
+                    widget.set_current_theme(self.current_theme)
+                return
+        self.collection_menu = CollectionMenu(player_name, self.stack)
+        self.collection_menu.player_name = player_name
+        self.stack.addWidget(self.collection_menu)
+        self.animate_transition(self.collection_menu)
+        if hasattr(self.collection_menu, 'set_current_theme'):
+            self.collection_menu.set_current_theme(self.current_theme)
+
+    def go_to_combat_screen(self, player1, player2, battle, on_finish=None):
+        # On ne réutilise pas les combats précédents (toujours un nouvel écran)
+        self.combat_screen = CombatScreen(player1, player2, battle, self.stack, on_finish)
+        self.stack.addWidget(self.combat_screen)
+        self.animate_transition(self.combat_screen)
+        if hasattr(self.combat_screen, 'set_current_theme'):
+            self.combat_screen.set_current_theme(self.current_theme)
+
+    def choose_accent_color(self):
+        color = QColorDialog.getColor()
+        if color.isValid():
+            ThemeManager.set_accent_color(color.name())
+
+    def show_help_popup(self):
+        popup = NotificationPopup("Utilisez les menus pour naviguer, personnalisez vos decks, et ouvrez des boosters pour enrichir votre collection !", duration=4000, parent=self)
+        popup.move(self.geometry().center() - popup.rect().center())
+        popup.show()
+
+    def set_language(self, lang):
+        if lang == self.current_lang:
+            return
+        if lang == 'en':
+            self.translator.load('en.qm')  # Fichier de traduction à générer
+            QApplication.instance().installTranslator(self.translator)
+        else:
+            QApplication.instance().removeTranslator(self.translator)
+        self.current_lang = lang
+        # Optionnel : rafraîchir les textes des écrans si besoin
+
+    def toggle_daltonian_mode(self, checked):
+        self.daltonian_mode = checked
+        # Propager à tous les écrans déjà instanciés
+        for attr in ["menu", "play_menu", "deck_menu", "shop_menu", "collection_menu"]:
+            if hasattr(self, attr):
+                screen = getattr(self, attr)
+                if hasattr(screen, "set_daltonian_mode"):
+                    screen.set_daltonian_mode(self.daltonian_mode)
+        # Pour l'écran de combat, il faut le gérer à l'instanciation
+
+    def toggle_bigfont_mode(self, checked):
+        self.bigfont_mode = checked
+        if checked:
+            self.setStyleSheet("* { font-size: 22px !important; }")
+        else:
+            self.setStyleSheet("")
+
+    def set_global_theme(self, theme):
+        self.current_theme = theme
+        if theme == 'DARK':
+            ThemeManager.apply(ThemeManager.DARK)
+        elif theme == 'LIGHT':
+            ThemeManager.apply(ThemeManager.LIGHT)
+        else:
+            ThemeManager.apply(ThemeManager.CONTRAST)
+        # Save user preference
+        config = load_user_config()
+        config['theme'] = theme
+        save_user_config(config)
+        # Propagate to current screen if possible
+        current = self.stack.currentWidget()
+        if hasattr(current, 'set_current_theme'):
+            current.set_current_theme(theme)
+
+    def get_global_theme(self):
+        return self.current_theme
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec_()) 
+__init__.py  |  CardGame2/__init__.py
+
+# --- screens ---
+combat_screen.py  |  CardGame2/screens/combat_screen.py
+from PyQt5.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QFrame, QScrollArea, QDialog
+)
+from PyQt5.QtCore import QPropertyAnimation, QRect, QTimer, Qt
+from PyQt5.QtGui import QKeyEvent, QKeySequence
+from typing import Optional, Callable
+from CardGame2.ui.components import (
+    StyledButton, StatsPanel, CardWidget, NotificationPopup, HealthBarWidget, LoadingPopup, HelpDialog
+)
+import datetime
+from CardGame2.data_manager import DataManager
+from CardGame2.models.hero import HeroPassive
+from CardGame2.ui.theme_manager import ThemeManager
+from CardGame2.ui.resources import UI_TEXTS
+import os
+
+# Stylesheets factorisés
+PLAYER_BOARD_STYLE = "border: 2px solid #3a7afe; padding: 8px; background: transparent;"
+PLAYER_BOARD_HIGHLIGHT_STYLE = "border: 2px solid #27ae60; background: #23272e; padding: 8px;"
+IA_HERO_STYLE = "background-color: #ffe066; border: 2px solid #ffae00; color: #222;"
+IA_UNIT_STYLE = "background-color: #ffebee; border: 2px solid #c62828; color: #222;"
+
+def log_debug(msg):
+    with open(os.path.join(os.path.dirname(__file__), '../../debug_cardgame2.log'), 'a', encoding='utf-8') as f:
+        f.write(msg + '\n')
+
+class PlayerBoardWidget(QFrame):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAcceptDrops(True)
+        self.setStyleSheet(PLAYER_BOARD_STYLE)
+        self._layout = QHBoxLayout()
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setSpacing(12)
+        self.setLayout(self._layout)
+        self.setMinimumHeight(280)  # Pour que les CardWidget (260px) tiennent bien
+        self.setSizePolicy(self.sizePolicy().Expanding, self.sizePolicy().Fixed)
+    def add_card_widget(self, widget):
+        if not hasattr(self, '_layout') or self._layout is None:
+            log_debug("[ERROR] PlayerBoardWidget._layout is None or destroyed, board will be recreated if needed.")
+            raise RuntimeError("PlayerBoardWidget._layout is None or destroyed")
+        try:
+            self._layout.addWidget(widget)
+        except RuntimeError as e:
+            log_debug(f"[ERROR] add_card_widget: {e}")
+            raise
+    def clear_board(self):
+        while self._layout.count():
+            child = self._layout.takeAt(0)
+            widget = child.widget() if child is not None else None
+            if widget is not None:
+                widget.hide()  # On cache le widget au lieu de setParent(None)
+    def set_highlight(self, highlight: bool):
+        if highlight:
+            self.setStyleSheet(PLAYER_BOARD_HIGHLIGHT_STYLE)
+        else:
+            self.setStyleSheet(PLAYER_BOARD_STYLE)
+
+class CombatScreen(QWidget):
+    def __init__(self, player1, player2, battle, parent: Optional[QWidget] = None, on_finish: Optional[Callable] = None) -> None:
+        super().__init__(parent)
+        self.player1 = player1
+        self.player2 = player2
+        self.battle = battle
+        self.on_finish = on_finish
+        self.round_count = 0
+        if not hasattr(self.player1, 'mana'):
+            self.player1.mana = 1
+        # Pioche initiale de 5 cartes pour chaque joueur
+        self.player1.draw(5)
+        self.player2.draw(5)
+        self.selected_attacker = None
+        self.show_hp_bars = True
+        self.invert_boards = False
+        self.daltonian_mode = False
+        self._init_ui()
+        self._start_turn_timer()
+        self.refresh_hand()
+        self.update_ui()
+
+    def _init_ui(self):
+        self._layout = QVBoxLayout()
+        # Barre horizontale de boutons tout en haut
+        self.top_buttons_layout = QHBoxLayout()
+        self.top_buttons_layout.setSpacing(0)
+        self.top_buttons_layout.setContentsMargins(0, 0, 0, 0)
+        self.daltonian_button = StyledButton("Mode daltonien")
+        self.daltonian_button.setCheckable(True)
+        self.daltonian_button.setChecked(False)
+        self.daltonian_button.clicked.connect(self.toggle_daltonian_mode)
+        self.daltonian_button.setToolTip(UI_TEXTS['daltonian_button'])
+        self.top_buttons_layout.addWidget(self.daltonian_button)
+        self.invert_boards_button = StyledButton("Inverser les boards (IA/Joueur)")
+        self.invert_boards_button.setCheckable(True)
+        self.invert_boards_button.setChecked(False)
+        self.invert_boards_button.clicked.connect(self.toggle_invert_boards)
+        self.invert_boards_button.setToolTip(UI_TEXTS['invert_boards_button'])
+        self.top_buttons_layout.addWidget(self.invert_boards_button)
+        # Activation héros (créé dans _init_hero_activation)
+        self.activate_hero_button = StyledButton(f"Activer Héros (Coût : {self.player1.hero.get_activation_cost()} mana)")
+        self.activate_hero_button.clicked.connect(self.activate_hero)
+        self.activate_hero_button.setToolTip(UI_TEXTS['activate_hero_button'])
+        self.top_buttons_layout.addWidget(self.activate_hero_button)
+        # Bouton tour suivant (créé dans _init_action_buttons)
+        self.next_button = StyledButton("Tour suivant")
+        self.next_button.setToolTip("Passer au tour suivant (raccourci : Entrée)")
+        self.next_button.clicked.connect(self.next_round)
+        self.top_buttons_layout.addWidget(self.next_button)
+        # Bouton abandonner
+        self.forfeit_button = StyledButton("Abandonner")
+        self.forfeit_button.setToolTip("Abandonner la partie et retourner au menu")
+        self.forfeit_button.clicked.connect(self.forfeit)
+        self.top_buttons_layout.addWidget(self.forfeit_button)
+        # Bouton masquer barres de vie
+        self.toggle_hp_button = StyledButton("Masquer les barres de vie")
+        self.toggle_hp_button.setCheckable(True)
+        self.toggle_hp_button.setChecked(True)
+        self.toggle_hp_button.clicked.connect(self.toggle_hp_bars)
+        self.toggle_hp_button.setToolTip(UI_TEXTS['toggle_hp_button'])
+        self.top_buttons_layout.addWidget(self.toggle_hp_button)
+        # Ajoute la barre de boutons tout en haut
+        self._layout.insertLayout(0, self.top_buttons_layout)
+        # Poursuit l'init UI sans les addWidget individuels pour ces boutons
+        self._init_hero_panels()
+        self._init_mana_label()
+        self._init_pv_panels()
+        self._init_units_panels()
+        self._init_log()
+        self._init_timer()
+        self._init_hand_panel()
+        self.setLayout(self._layout)
+        # Tab order (optionnel)
+        self.setTabOrder(self.daltonian_button, self.invert_boards_button)
+        self.setTabOrder(self.invert_boards_button, self.activate_hero_button)
+        self.setTabOrder(self.activate_hero_button, self.next_button)
+        self.setTabOrder(self.next_button, self.forfeit_button)
+        self.setTabOrder(self.forfeit_button, self.toggle_hp_button)
+        self.daltonian_button.setFocus()
+
+    def _init_hero_panels(self):
+        self.hero_layout = QHBoxLayout()
+        self.hero1_panel = StatsPanel("Votre Héros", self.hero_stats(self.player1.hero))
+        self.hero2_panel = StatsPanel("Héros IA", self.hero_stats(self.player2.hero))
+        self.hero_layout.addWidget(self.hero1_panel)
+        self.hero_layout.addStretch()
+        self.hero_layout.addWidget(self.hero2_panel)
+        self._layout.addLayout(self.hero_layout)
+        self.hero1_panel.setToolTip(UI_TEXTS['hero1_panel'])
+        self.hero2_panel.setToolTip(UI_TEXTS['hero2_panel'])
+
+    def _init_hero_activation(self):
+        # Ne crée plus le bouton ici, il est déjà créé dans _init_ui
+        pass
+
+    def _init_mana_label(self):
+        self.mana_label = QLabel(f"Mana : {self.player1.mana}")
+        self._layout.addWidget(self.mana_label)
+        self.mana_label.setToolTip(UI_TEXTS['mana_label'])
+
+    def _init_pv_panels(self):
+        self.pv_layout = QHBoxLayout()
+        self.pv1_label = QLabel(f"PV Joueur : {self.player1.health}")
+        self.pv2_label = QLabel(f"PV IA : {self.player2.health}")
+        self.pv_layout.addWidget(self.pv1_label)
+        self.pv_layout.addStretch()
+        self.pv_layout.addWidget(self.pv2_label)
+        self._layout.addLayout(self.pv_layout)
+        self.pv1_label.setToolTip("Points de vie restants de votre héros")
+        self.pv2_label.setToolTip("Points de vie restants du héros IA")
+
+    def _init_units_panels(self):
+        aura_colors = {
+            'boost': "#ffd600" if not self.daltonian_mode else "#ff9800",
+            'poison': "#9c27b0" if not self.daltonian_mode else "#607d8b",
+            'shield': "#2979ff" if not self.daltonian_mode else "#009688",
+            'freeze': "#00e5ff" if not self.daltonian_mode else "#795548",
+            'burn': "#ff5722" if not self.daltonian_mode else "#607d8b",
+        }
+        self.units_layout = QVBoxLayout()
+        # Ligne du joueur (héros + unités) avec scroll si besoin
+        self.player_board = PlayerBoardWidget()
+        self.player_board_widgets = []
+        self.player_board_scroll = QScrollArea()
+        self.player_board_scroll.setWidgetResizable(True)
+        self.player_board_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.player_board_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.player_board_scroll.setFrameShape(QFrame.NoFrame)
+        self.player_board_scroll.setMinimumHeight(300)
+        self.player_board_scroll.setMaximumHeight(320)
+        self.player_board_scroll.setWidget(self.player_board)
+        self.units_layout.addWidget(QLabel("Votre board :"))
+        self.units_layout.addWidget(self.player_board_scroll)
+        # Ligne IA (héros + unités) avec scroll aussi
+        self.ia_board_widget = PlayerBoardWidget()
+        self.ia_board_widgets = []
+        ia_hero_widget = CardWidget(self.player2.hero.name, "HÉROS", "-", 0, self.player2.hero.base_attack, self.player2.hero.base_hp, f"DEF: {self.player2.hero.base_defense}")
+        ia_hero_widget.setStyleSheet(IA_HERO_STYLE)
+        try:
+            self.ia_board_widget.add_card_widget(ia_hero_widget)
+        except RuntimeError:
+            log_debug("[DEBUG] ia_board_widget détruit détecté lors de add_card_widget (init, héros IA), recréation immédiate")
+            self.ia_board_widget = PlayerBoardWidget()
+            self.ia_board_widgets = []
+            if hasattr(self, 'units_layout') and self.units_layout is not None:
+                self.units_layout.insertWidget(3, self.ia_board_widget)
+                log_debug("[DEBUG] Nouveau ia_board_widget inséré dans units_layout (recréation immédiate, init, héros IA)")
+            self.ia_board_widget.add_card_widget(ia_hero_widget)
+        self.ia_board_widgets.append(ia_hero_widget)
+        if self.show_hp_bars:
+            hp_bar = HealthBarWidget(getattr(self.player2.hero, 'current_hp', self.player2.hero.base_hp), getattr(self.player2.hero, 'max_hp', self.player2.hero.base_hp))
+            try:
+                self.ia_board_widget.add_card_widget(hp_bar)
+            except RuntimeError:
+                log_debug("[DEBUG] ia_board_widget détruit détecté lors de add_card_widget (init, hp_bar héros IA), recréation immédiate")
+                self.ia_board_widget = PlayerBoardWidget()
+                self.ia_board_widgets = []
+                if hasattr(self, 'units_layout') and self.units_layout is not None:
+                    self.units_layout.insertWidget(3, self.ia_board_widget)
+                    log_debug("[DEBUG] Nouveau ia_board_widget inséré dans units_layout (recréation immédiate, init, hp_bar héros IA)")
+                self.ia_board_widget.add_card_widget(hp_bar)
+        for unit in self.player2.board:
+            w = CardWidget(unit.name, "UNITÉ", getattr(unit, 'rarity', '-'), getattr(unit, 'cost', 0), getattr(unit, 'attack', None), getattr(unit, 'health', None), getattr(unit, 'description', ''))
+            w.setStyleSheet(IA_UNIT_STYLE)
+            w.clicked.connect(lambda _, widget=w, target_unit=unit: self.handle_attack(widget, target_unit))
+            w.keyPressEvent = lambda event, w=w, u=unit: self._card_keypress(event, w, u, is_player=False)
+            # Ajout du héros IA sur le board (robuste)
+            try:
+                self.ia_board_widget.add_card_widget(w)
+            except RuntimeError:
+                log_debug("[DEBUG] ia_board_widget détruit détecté lors de add_card_widget, recréation immédiate")
+                self.ia_board_widget = PlayerBoardWidget()
+                self.ia_board_widgets = []
+                if hasattr(self, 'units_layout') and self.units_layout is not None:
+                    self.units_layout.insertWidget(3, self.ia_board_widget)
+                    log_debug("[DEBUG] Nouveau ia_board_widget inséré dans units_layout (recréation immédiate)")
+                self.ia_board_widget.add_card_widget(w)
+            self.ia_board_widgets.append(w)
+            if self.show_hp_bars:
+                hp_bar = HealthBarWidget(getattr(unit, 'health', 0), getattr(unit, 'max_health', 0))
+                # Ajout du héros IA sur le board (robuste)
+                try:
+                    self.ia_board_widget.add_card_widget(hp_bar)
+                except RuntimeError:
+                    log_debug("[DEBUG] ia_board_widget détruit détecté lors de add_card_widget, recréation immédiate")
+                    self.ia_board_widget = PlayerBoardWidget()
+                    self.ia_board_widgets = []
+                    if hasattr(self, 'units_layout') and self.units_layout is not None:
+                        self.units_layout.insertWidget(3, self.ia_board_widget)
+                        log_debug("[DEBUG] Nouveau ia_board_widget inséré dans units_layout (recréation immédiate)")
+                    self.ia_board_widget.add_card_widget(hp_bar)
+            if hasattr(unit, 'status_effects'):
+                for eff in unit.status_effects:
+                    eff_type = eff['type'] if isinstance(eff, dict) else eff
+                    if eff_type in aura_colors:
+                        w.set_aura(True, color=aura_colors[eff_type], daltonian_mode=self.daltonian_mode)
+            if hasattr(self.player2, 'hero') and self.player2.hero and hasattr(self.player2.hero, 'has_passive'):
+                if self.player2.hero.has_passive(HeroPassive.CHARISMATIQUE):
+                    if hasattr(unit, 'health') and hasattr(unit, 'max_health') and unit.health < unit.max_health:
+                        w.heal_glow()
+        for w in self.ia_board_widgets:
+            w.set_glow(self.selected_attacker is not None, color="#ff1744")
+            # Feedback visuel de sélection de cible
+            if self.selected_attacker is not None and w.hasFocus():
+                w.set_target_highlight(True)
+            else:
+                w.set_target_highlight(False)
+        self.pv1_label.setText(f"PV Joueur : {self.player1.health}")
+        self.pv2_label.setText(f"PV IA : {self.player2.health}")
+        self.mana_label.setText(f"Mana : {self.player1.mana}")
+
+    def _init_log(self):
+        self.log = QListWidget()
+        self.toggle_log_button = StyledButton("Masquer le log")
+        self.toggle_log_button.setCheckable(True)
+        self.toggle_log_button.setChecked(True)
+        self.toggle_log_button.clicked.connect(self.toggle_log_visibility)
+        self.toggle_log_button.setToolTip("Affiche ou masque le log du combat")
+        self.copy_log_button = StyledButton("Copier le log")
+        self.copy_log_button.clicked.connect(self.copy_log_to_clipboard)
+        self.copy_log_button.setToolTip("Copie l'intégralité du log dans le presse-papiers")
+        self.export_log_button = StyledButton("Exporter le log")
+        self.export_log_button.clicked.connect(self.export_log_to_file)
+        self.export_log_button.setToolTip("Exporte le log du combat dans un fichier texte")
+        self._layout.addWidget(QLabel("Log du combat :"))
+        self._layout.addWidget(self.toggle_log_button)
+        self._layout.addWidget(self.log)
+        self._layout.addWidget(self.copy_log_button)
+        self._layout.addWidget(self.export_log_button)
+        self.log.setToolTip("Historique détaillé des actions du combat")
+
+    def _init_action_buttons(self):
+        # Ne crée plus les boutons ici, ils sont déjà créés dans _init_ui
+        pass
+
+    def _init_timer(self):
+        self.timer_label = QLabel("Temps restant : 45s")
+        self._layout.addWidget(self.timer_label)
+        self.timer_label.setToolTip("Temps restant pour jouer ce tour")
+        self.turn_timer = QTimer(self)
+        self.turn_timer.setInterval(1000)
+        self.turn_timer.timeout.connect(self.update_timer)
+        self.time_left = 45
+
+    def _start_turn_timer(self):
+        self.turn_timer.start()
+
+    def _init_hand_panel(self):
+        self.hand_list = QListWidget()
+        self.hand_list.setStyleSheet("background: #181a20; color: #f8f8f2; font-size: 15px; min-height: 80px;")
+        self.hand_list.setDragEnabled(True)
+        self._layout.addWidget(QLabel("Votre main :"))
+        self._layout.addWidget(self.hand_list)
+        # Correction PyQt5 : signature des événements
+        def board_drag_enter_a0(a0):
+            return self.board_drag_enter(a0)
+        def board_drag_leave_a0(a0):
+            return self.board_drag_leave(a0)
+        def board_drop_event_a0(a0):
+            return self.board_drop_event(a0)
+        self.player_board.dragEnterEvent = board_drag_enter_a0
+        self.player_board.dragLeaveEvent = board_drag_leave_a0
+        self.player_board.dropEvent = board_drop_event_a0
+
+    def hero_stats(self, hero) -> dict:
+        if not hero:
+            return {"-": "-"}
+        return {
+            "Nom": hero.name,
+            "PV": f"{hero.base_hp}+{hero.customization.get_hp_bonus()}",
+            "ATK": f"{hero.base_attack}+{hero.customization.get_attack_bonus()}",
+            "DEF": f"{hero.base_defense}+{hero.customization.get_defense_bonus()}",
+            "Passifs": ', '.join([p.value for p in hero.customization.passives])
+        }
+
+    def units_summary(self, units) -> str:
+        if not units:
+            return "-"
+        return ", ".join([f"{u.name} (ATK:{getattr(u, 'attack', '-')}/PV:{getattr(u, 'health', '-')})" for u in units])
+
+    def _add_log(self, message: str, type_: str = "info"):
+        # Ajoute une icône/couleur selon le type
+        if type_ == "attack":
+            html = f'<span style="color:#d32f2f;">🗡️ {message}</span>'
+        elif type_ == "activate":
+            html = f'<span style="color:#ffb300;">✨ {message}</span>'
+        elif type_ == "victory":
+            html = f'<span style="color:#43a047;">🏆 {message}</span>'
+        elif type_ == "defeat":
+            html = f'<span style="color:#b71c1c;">💀 {message}</span>'
+        elif type_ == "warning":
+            html = f'<span style="color:#fbc02d;">⚠️ {message}</span>'
+        else:
+            html = message
+        item = QListWidgetItem()
+        item.setData(Qt.ItemDataRole.DisplayRole, html)
+        self.log.addItem(item)
+        self.log.scrollToBottom()
+        while self.log.count() > 8:
+            self.log.takeItem(0)
+
+    def activate_hero(self):
+        try:
+            cost = self.player1.hero.get_activation_cost()
+            if self.player1.mana < cost:
+                self._add_log(f"Pas assez de mana pour activer le héros (coût : {cost}) !", type_="warning")
+                return
+            self.player1.mana -= cost
+            self.mana_label.setText(f"Mana : {self.player1.mana}")
+            self.player1.hero.activate()
+            self.hero1_panel.setStyleSheet("background-color: #ffe066; border: 2px solid #ffae00; color: #222;")
+            self._add_log(f"Votre héros est activé et entre sur le terrain ! (Coût : {cost} mana)", type_="activate")
+            self.activate_hero_button.setEnabled(False)
+            self.update_ui()
+        except Exception as e:
+            log_debug(f"[ERROR] Exception dans activate_hero : {e}")
+            NotificationPopup(f"Erreur lors de l'activation du héros : {e}", 4000, self).show()
+
+    def update_ui(self) -> None:
+        try:
+            aura_colors = {
+                'boost': "#ffd600" if not self.daltonian_mode else "#ff9800",
+                'poison': "#9c27b0" if not self.daltonian_mode else "#607d8b",
+                'shield': "#2979ff" if not self.daltonian_mode else "#009688",
+                'freeze': "#00e5ff" if not self.daltonian_mode else "#795548",
+                'burn': "#ff5722" if not self.daltonian_mode else "#607d8b",
+            }
+            log_debug("[DEBUG] CombatScreen.update_ui appelée")
+            recreate = False
+            if (not hasattr(self, 'player_board') or self.player_board is None or
+                not hasattr(self.player_board, '_layout') or self.player_board._layout is None or
+                self.player_board.parent() is None):
+                log_debug("[DEBUG] player_board détruit ou orphelin, recréation forcée")
+                recreate = True
+            if recreate:
+                if hasattr(self, 'units_layout') and self.units_layout is not None:
+                    for i in reversed(range(self.units_layout.count())):
+                        item = self.units_layout.itemAt(i)
+                        widget = item.widget() if item is not None else None
+                        if widget is self.player_board:
+                            self.units_layout.removeWidget(widget)
+                            if widget is not None:
+                                widget.deleteLater()
+                            log_debug("[DEBUG] Ancien player_board supprimé du layout (recréation forcée)")
+                self.player_board = PlayerBoardWidget()
+                self.player_board_widgets = []
+                if hasattr(self, 'units_layout') and self.units_layout is not None:
+                    self.units_layout.insertWidget(1, self.player_board)
+                    log_debug("[DEBUG] Nouveau player_board inséré dans units_layout (recréation forcée)")
+            try:
+                self._refresh_hero_panels()
+            except Exception as e:
+                log_debug(f"[ERROR] Exception dans _refresh_hero_panels : {e}")
+                NotificationPopup(f"Erreur dans l'affichage des héros : {e}", 4000, self).show()
+            self.player_board.clear_board()
+            self.player_board_widgets.clear()
+            for w in self.ia_board_widgets:
+                if w is not None:
+                    w.hide()
+            self.ia_board_widgets.clear()
+            if hasattr(self, 'units_widget') and self.units_widget is not None:
+                self._layout.removeWidget(self.units_widget)
+                self.units_widget.hide()
+            self.units_layout = QVBoxLayout()
+            if self.invert_boards:
+                self.units_layout.addWidget(QLabel("Votre board :"))
+                self.units_layout.addWidget(self.player_board_scroll)
+                self.units_layout.addWidget(QLabel("Board IA :"))
+                if hasattr(self, 'ia_board_scroll') and self.ia_board_scroll is not None:
+                    self.units_layout.addWidget(self.ia_board_scroll)
+            else:
+                self.units_layout.addWidget(QLabel("Board IA :"))
+                if hasattr(self, 'ia_board_scroll') and self.ia_board_scroll is not None:
+                    self.units_layout.addWidget(self.ia_board_scroll)
+                self.units_layout.addWidget(QLabel("Votre board :"))
+                self.units_layout.addWidget(self.player_board_scroll)
+            self.units_widget = QWidget()
+            self.units_widget.setLayout(self.units_layout)
+            self._layout.insertWidget(4, self.units_widget)
+            hero_widget = CardWidget(self.player1.hero.name, "HÉROS", "-", 0, self.player1.hero.base_attack, self.player1.hero.base_hp, f"DEF: {self.player1.hero.base_defense}")
+            hero_widget.setStyleSheet("background-color: #ffe066; border: 2px solid #ffae00; color: #222;")
+            hero_widget.clicked.connect(lambda _, widget=hero_widget, unit=self.player1.hero: self.select_attacker(widget, unit))
+            hero_widget.keyPressEvent = lambda event, w=hero_widget, u=self.player1.hero: self._card_keypress(event, w, u, is_player=True)
+            try:
+                self.player_board.add_card_widget(hero_widget)
+            except RuntimeError:
+                log_debug("[DEBUG] player_board détruit détecté lors de add_card_widget, recréation immédiate")
+                self.player_board = PlayerBoardWidget()
+                self.player_board_widgets = []
+                if hasattr(self, 'units_layout') and self.units_layout is not None:
+                    self.units_layout.insertWidget(1, self.player_board)
+                    log_debug("[DEBUG] Nouveau player_board inséré dans units_layout (recréation immédiate)")
+                self.player_board.add_card_widget(hero_widget)
+            self.player_board_widgets.append(hero_widget)
+            if self.show_hp_bars:
+                hp_bar = HealthBarWidget(getattr(self.player1.hero, 'current_hp', self.player1.hero.base_hp), getattr(self.player1.hero, 'max_hp', self.player1.hero.base_hp))
+                self.player_board.add_card_widget(hp_bar)
+            for unit in self.player1.board:
+                w = CardWidget(unit.name, "UNITÉ", getattr(unit, 'rarity', '-'), getattr(unit, 'cost', 0), getattr(unit, 'attack', None), getattr(unit, 'health', None), getattr(unit, 'description', ''))
+                w.setStyleSheet("background-color: #e3f2fd; border: 2px solid #1976d2; color: #222;")
+                w.clicked.connect(lambda _, widget=w, unit=unit: self.select_attacker(widget, unit))
+                w.keyPressEvent = lambda event, w=w, u=unit: self._card_keypress(event, w, u, is_player=True)
+                try:
+                    self.player_board.add_card_widget(w)
+                except RuntimeError:
+                    log_debug("[DEBUG] player_board détruit détecté lors de add_card_widget, recréation immédiate")
+                    self.player_board = PlayerBoardWidget()
+                    self.player_board_widgets = []
+                    if hasattr(self, 'units_layout') and self.units_layout is not None:
+                        self.units_layout.insertWidget(1, self.player_board)
+                        log_debug("[DEBUG] Nouveau player_board inséré dans units_layout (recréation immédiate)")
+                    self.player_board.add_card_widget(w)
+                self.player_board_widgets.append(w)
+                if self.show_hp_bars:
+                    hp_bar = HealthBarWidget(getattr(unit, 'health', 0), getattr(unit, 'max_health', 0))
+                    try:
+                        self.player_board.add_card_widget(hp_bar)
+                    except RuntimeError:
+                        log_debug("[DEBUG] player_board détruit détecté lors de add_card_widget, recréation immédiate")
+                        self.player_board = PlayerBoardWidget()
+                        self.player_board_widgets = []
+                        if hasattr(self, 'units_layout') and self.units_layout is not None:
+                            self.units_layout.insertWidget(1, self.player_board)
+                            log_debug("[DEBUG] Nouveau player_board inséré dans units_layout (recréation immédiate)")
+                        self.player_board.add_card_widget(hp_bar)
+                if hasattr(unit, 'status_effects'):
+                    for eff in unit.status_effects:
+                        eff_type = eff['type'] if isinstance(eff, dict) else eff
+                        if eff_type in aura_colors:
+                            w.set_aura(True, color=aura_colors[eff_type], daltonian_mode=self.daltonian_mode)
+                if hasattr(self.player1, 'hero') and self.player1.hero and hasattr(self.player1.hero, 'has_passive'):
+                    if self.player1.hero.has_passive(HeroPassive.CHARISMATIQUE):
+                        if hasattr(unit, 'health') and hasattr(unit, 'max_health') and unit.health < unit.max_health:
+                            w.heal_glow()
+            ia_hero_widget = CardWidget(self.player2.hero.name, "HÉROS", "-", 0, self.player2.hero.base_attack, self.player2.hero.base_hp, f"DEF: {self.player2.hero.base_defense}")
+            try:
+                self.ia_board_widget.add_card_widget(ia_hero_widget)
+            except RuntimeError:
+                log_debug("[DEBUG] ia_board_widget détruit détecté lors de add_card_widget (update_ui, héros IA), recréation immédiate")
+                self.ia_board_widget = PlayerBoardWidget()
+                self.ia_board_widgets = []
+                if hasattr(self, 'units_layout') and self.units_layout is not None:
+                    self.units_layout.insertWidget(3, self.ia_board_widget)
+                    log_debug("[DEBUG] Nouveau ia_board_widget inséré dans units_layout (recréation immédiate, update_ui, héros IA)")
+                self.ia_board_widget.add_card_widget(ia_hero_widget)
+            self.ia_board_widgets.append(ia_hero_widget)
+            if self.show_hp_bars:
+                hp_bar = HealthBarWidget(getattr(self.player2.hero, 'current_hp', self.player2.hero.base_hp), getattr(self.player2.hero, 'max_hp', self.player2.hero.base_hp))
+                try:
+                    self.ia_board_widget.add_card_widget(hp_bar)
+                except RuntimeError:
+                    log_debug("[DEBUG] ia_board_widget détruit détecté lors de add_card_widget (update_ui, hp_bar héros IA), recréation immédiate")
+                    self.ia_board_widget = PlayerBoardWidget()
+                    self.ia_board_widgets = []
+                    if hasattr(self, 'units_layout') and self.units_layout is not None:
+                        self.units_layout.insertWidget(3, self.ia_board_widget)
+                        log_debug("[DEBUG] Nouveau ia_board_widget inséré dans units_layout (recréation immédiate, update_ui, hp_bar héros IA)")
+                    self.ia_board_widget.add_card_widget(hp_bar)
+            for unit in self.player2.board:
+                w = CardWidget(unit.name, "UNITÉ", getattr(unit, 'rarity', '-'), getattr(unit, 'cost', 0), getattr(unit, 'attack', None), getattr(unit, 'health', None), getattr(unit, 'description', ''))
+                w.setStyleSheet(IA_UNIT_STYLE)
+                w.clicked.connect(lambda _, widget=w, target_unit=unit: self.handle_attack(widget, target_unit))
+                w.keyPressEvent = lambda event, w=w, u=unit: self._card_keypress(event, w, u, is_player=False)
+                try:
+                    self.ia_board_widget.add_card_widget(w)
+                except RuntimeError:
+                    log_debug("[DEBUG] ia_board_widget détruit détecté lors de add_card_widget, recréation immédiate")
+                    self.ia_board_widget = PlayerBoardWidget()
+                    self.ia_board_widgets = []
+                    if hasattr(self, 'units_layout') and self.units_layout is not None:
+                        self.units_layout.insertWidget(3, self.ia_board_widget)
+                        log_debug("[DEBUG] Nouveau ia_board_widget inséré dans units_layout (recréation immédiate)")
+                    self.ia_board_widget.add_card_widget(w)
+                self.ia_board_widgets.append(w)
+                if self.show_hp_bars:
+                    hp_bar = HealthBarWidget(getattr(unit, 'health', 0), getattr(unit, 'max_health', 0))
+                    try:
+                        self.ia_board_widget.add_card_widget(hp_bar)
+                    except RuntimeError:
+                        log_debug("[DEBUG] ia_board_widget détruit détecté lors de add_card_widget, recréation immédiate")
+                        self.ia_board_widget = PlayerBoardWidget()
+                        self.ia_board_widgets = []
+                        if hasattr(self, 'units_layout') and self.units_layout is not None:
+                            self.units_layout.insertWidget(3, self.ia_board_widget)
+                            log_debug("[DEBUG] Nouveau ia_board_widget inséré dans units_layout (recréation immédiate)")
+                        self.ia_board_widget.add_card_widget(hp_bar)
+                if hasattr(unit, 'status_effects'):
+                    for eff in unit.status_effects:
+                        eff_type = eff['type'] if isinstance(eff, dict) else eff
+                        if eff_type in aura_colors:
+                            w.set_aura(True, color=aura_colors[eff_type], daltonian_mode=self.daltonian_mode)
+                if hasattr(self.player2, 'hero') and self.player2.hero and hasattr(self.player2.hero, 'has_passive'):
+                    if self.player2.hero.has_passive(HeroPassive.CHARISMATIQUE):
+                        if hasattr(unit, 'health') and hasattr(unit, 'max_health') and unit.health < unit.max_health:
+                            w.heal_glow()
+            for w in self.ia_board_widgets:
+                w.set_glow(self.selected_attacker is not None, color="#ff1744")
+                if self.selected_attacker is not None and w.hasFocus():
+                    w.set_target_highlight(True)
+                else:
+                    w.set_target_highlight(False)
+            self.pv1_label.setText(f"PV Joueur : {self.player1.health}")
+            self.pv2_label.setText(f"PV IA : {self.player2.health}")
+            self.mana_label.setText(f"Mana : {self.player1.mana}")
+        except Exception as e:
+            log_debug(f"[ERROR] Exception dans update_ui : {e}")
+            NotificationPopup(f"Erreur d'affichage : {e}", 4000, self).show()
+
+    def _refresh_hero_panels(self):
+        # On ne fait plus setParent(None), on remplace les panels dans le layout
+        for i in reversed(range(self.hero_layout.count())):
+            item = self.hero_layout.itemAt(i)
+            widget = item.widget() if item is not None else None
+            if widget:
+                self.hero_layout.removeWidget(widget)
+                widget.hide()
+        self.hero1_panel = StatsPanel("Votre Héros", self.hero_stats(self.player1.hero))
+        if self.player1.hero.is_active:
+            self.hero1_panel.setStyleSheet("background-color: #ffe066; border: 2px solid #ffae00; color: #222;")
+        self.hero2_panel = StatsPanel("Héros IA", self.hero_stats(self.player2.hero))
+        self.hero_layout.addWidget(self.hero1_panel)
+        self.hero_layout.addStretch()
+        self.hero_layout.addWidget(self.hero2_panel)
+
+    def forfeit(self):
+        try:
+            self.battle.forfeit_player(self.player1)
+            self._add_log("Vous avez abandonné. Défaite.", type_="defeat")
+            self.next_button.setEnabled(False)
+            self.forfeit_button.setEnabled(False)
+            self.turn_timer.stop()
+            if self.on_finish:
+                self.on_finish(self.battle, self.round_count)
+            else:
+                self.close()
+        except Exception as e:
+            log_debug(f"[ERROR] Exception dans forfeit : {e}")
+            NotificationPopup(f"Erreur lors de l'abandon : {e}", 4000, self).show()
+
+    def update_timer(self):
+        self.time_left -= 1
+        self.timer_label.setText(f"Temps restant : {self.time_left}s")
+        if self.time_left <= 0:
+            self._add_log("Temps écoulé ! Fin du tour automatique.", type_="warning")
+            self.turn_timer.stop()
+            self.next_round()
+
+    def next_round(self) -> None:
+        try:
+            self.time_left = 45
+            self.timer_label.setText(f"Temps restant : {self.time_left}s")
+            self.turn_timer.start()
+            # Décrément durée effets spéciaux sur toutes les unités
+            for unit in self.player1.board + self.player2.board:
+                if hasattr(unit, 'status_effects'):
+                    new_effects = []
+                    for eff in unit.status_effects:
+                        if isinstance(eff, dict) and 'duration' in eff:
+                            eff['duration'] -= 1
+                            if eff['duration'] > 0:
+                                new_effects.append(eff)
+                            else:
+                                self._add_log(f"L'effet {eff['type']} sur {unit.name} s'est dissipé.", type_="info")
+                                for w in self.player_board_widgets + self.ia_board_widgets:
+                                    if w.name_label.text().replace('<b>','').replace('</b>','') == unit.name:
+                                        w.flash()
+                                        w.play_sound('effect_expire')
+                                        break
+                                if eff['type'] == 'poison':
+                                    if hasattr(unit, 'take_damage'):
+                                        unit.take_damage(1)
+                                        self._add_log(f"{unit.name} subit 1 dégât du poison qui s'est dissipé.", type_="attack")
+                                        for w in self.player_board_widgets + self.ia_board_widgets:
+                                            if w.name_label.text().replace('<b>','').replace('</b>','') == unit.name:
+                                                w.shake()
+                                                w.play_sound('attack')
+                                                break
+                                elif eff['type'] == 'shield':
+                                    if hasattr(unit, 'health') and hasattr(unit, 'max_health'):
+                                        unit.health = min(unit.health + 1, getattr(unit, 'max_health', unit.health))
+                                        self._add_log(f"{unit.name} récupère 1 PV grâce au bouclier dissipé.", type_="activate")
+                                        for w in self.player_board_widgets + self.ia_board_widgets:
+                                            if w.name_label.text().replace('<b>','').replace('</b>','') == unit.name:
+                                                w.play_sound('heal')
+                                                w.heal_glow()
+                                                break
+                        else:
+                            new_effects.append(eff)
+                    unit.status_effects = new_effects
+            self.player1.gain_mana()
+            if self.battle.check_victory():
+                winner = self.battle.winner
+                result = 'victoire' if winner == self.player1 else ('défaite' if winner == self.player2 else 'égalité')
+                reward = 0
+                if result == 'victoire':
+                    reward = int(0.2 * 100)
+                elif result == 'défaite':
+                    reward = int(0.1 * 100)
+                if self.round_count >= 15:
+                    reward *= 2
+                data_manager = DataManager()
+                data_manager.add_game_history({
+                    'date': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
+                    'deck': getattr(self.player1, 'deck', []),
+                    'resultat': result,
+                    'tours': self.round_count,
+                    'recompense': reward
+                })
+                if winner == self.player1:
+                    self._add_log("Fin du combat : Victoire !", type_="victory")
+                    for w in self.player_board_widgets:
+                        w.play_sound('victory')
+                    NotificationPopup("🏆 Victoire !", 3500, self).show()
+                    self._fade_out()
+                elif winner == self.player2:
+                    self._add_log("Fin du combat : Défaite.", type_="defeat")
+                    for w in self.player_board_widgets:
+                        w.play_sound('defeat')
+                    NotificationPopup("💀 Défaite...", 3500, self).show()
+                    self._fade_out()
+                else:
+                    self._add_log("Fin du combat : Égalité.", type_="warning")
+                    NotificationPopup("🤝 Égalité", 3500, self).show()
+                    self._fade_out()
+                self.next_button.setEnabled(False)
+                if self.on_finish:
+                    self.on_finish(self.battle, self.round_count)
+                return
+            self.battle.play_round()
+            self.round_count += 1
+            self._add_log(f"Tour {self.round_count} joué.", type_="info")
+            self.update_ui()
+        except Exception as e:
+            log_debug(f"[ERROR] Exception dans next_round : {e}")
+            NotificationPopup(f"Erreur lors de la fin de tour : {e}", 4000, self).show()
+
+    def _fade_out(self):
+        anim = QPropertyAnimation(self, b"windowOpacity")
+        anim.setDuration(1200)
+        anim.setStartValue(1.0)
+        anim.setEndValue(0.0)
+        anim.start()
+        self._current_anim = anim  # Correction : référence forte pour éviter le GC
+
+    def refresh_hand(self):
+        self.hand_list.clear()
+        for card in self.player1.hand:
+            item = QListWidgetItem(card.name)
+            self.hand_list.addItem(item)
+        # Feedback sonore pioche
+        if hasattr(self, 'player_board_widgets') and self.player_board_widgets:
+            self.player_board_widgets[0].play_sound('draw')
+
+    def board_drag_enter(self, event):
+        event.accept()
+        self.player_board.set_highlight(True)
+
+    def board_drag_leave(self, event):
+        self.player_board.set_highlight(False)
+
+    def board_drop_event(self, event):
+        card_name = event.mimeData().text().split(' (')[0]
+        card = next((c for c in self.player1.hand if c.name == card_name), None)
+        if card:
+            if getattr(card, 'cost', 0) > self.player1.mana:
+                self._add_log(f"Pas assez de mana pour jouer {card.name} !")
+            else:
+                self.player1.play_card(card, self.battle, None)
+                self._add_log(f"Vous jouez {card.name} sur le board.")
+                # Feedback sonore pose carte
+                if hasattr(self, 'player_board_widgets') and self.player_board_widgets:
+                    self.player_board_widgets[0].play_sound('play_card')
+                self.refresh_hand()
+                self.update_ui()
+        self.player_board.set_highlight(False)
+        event.accept()
+
+    def handle_attack(self, widget, target_unit):
+        if not self.selected_attacker:
+            self._add_log("Sélectionnez d'abord une unité à attaquer !", type_="warning")
+            return
+        # Empêche d'attaquer si l'unité est gelée
+        if hasattr(self.selected_attacker, 'status_effects'):
+            for eff in self.selected_attacker.status_effects:
+                eff_type = eff['type'] if isinstance(eff, dict) else eff
+                if eff_type == 'freeze':
+                    self._add_log(f"{self.selected_attacker.name} est gelé et ne peut pas attaquer !", type_="warning")
+                    return
+        # Applique le bonus d'attaque temporaire du boost
+        atk_bonus = 0
+        if hasattr(self.selected_attacker, 'status_effects'):
+            for eff in self.selected_attacker.status_effects:
+                eff_type = eff['type'] if isinstance(eff, dict) else eff
+                if eff_type == 'boost':
+                    atk_bonus += 2  # Exemple : +2 ATK temporaire
+        if atk_bonus:
+            if hasattr(self.selected_attacker, 'attack'):
+                self.selected_attacker.attack += atk_bonus
+        self.battle.attack(self.selected_attacker, target_unit)
+        widget.shake()
+        widget.play_sound('attack')
+        self._add_log(f"{self.selected_attacker.name} attaque {target_unit.name} !", type_="attack")
+        # Retire le bonus d'attaque temporaire après l'attaque
+        if atk_bonus:
+            if hasattr(self.selected_attacker, 'attack'):
+                self.selected_attacker.attack -= atk_bonus
+        self.selected_attacker = None
+        self.update_ui()
+
+    def select_attacker(self, widget, unit):
+        # Désactive le glow sur tous les widgets du board joueur
+        for w in self.player_board_widgets:
+            w.set_glow(False)
+        widget.set_glow(True)
+        self.selected_attacker = unit
+
+    def _card_keypress(self, event, widget, unit, is_player):
+        key = event.key()
+        widgets = self.player_board_widgets if is_player else self.ia_board_widgets
+        idx = widgets.index(widget)
+        if key in (Qt.Key_Right, Qt.Key_Down):
+            next_idx = (idx + 1) % len(widgets)
+            widgets[next_idx].setFocus()
+        elif key in (Qt.Key_Left, Qt.Key_Up):
+            prev_idx = (idx - 1) % len(widgets)
+            widgets[prev_idx].setFocus()
+        elif key in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_Space):
+            if is_player:
+                self.select_attacker(widget, unit)
+            else:
+                self.handle_attack(widget, unit)
+
+    def toggle_log_visibility(self):
+        visible = self.toggle_log_button.isChecked()
+        self.log.setVisible(visible)
+        self.toggle_log_button.setText("Masquer le log" if visible else "Afficher le log")
+
+    def copy_log_to_clipboard(self):
+        from PyQt5.QtWidgets import QApplication
+        text = '\n'.join(self.log.item(i).text() for i in range(self.log.count()) if self.log.item(i) is not None and hasattr(self.log.item(i), 'text'))
+        text = '\n'.join(self.log.item(i).text() for i in range(self.log.count()))
+        QApplication.clipboard().setText(text)
+
+    def export_log_to_file(self):
+        self.loading_popup = LoadingPopup("Export du log...", self)
+        self.loading_popup.show()
+        try:
+            from PyQt5.QtWidgets import QFileDialog
+            text = '\n'.join(self.log.item(i).text() for i in range(self.log.count()))
+            path, _ = QFileDialog.getSaveFileName(self, "Exporter le log", "combat_log.txt", "Fichiers texte (*.txt)")
+            if path:
+                with open(path, 'w', encoding='utf-8') as f:
+                    f.write(text)
+        finally:
+            self.loading_popup.close()
+
+    def toggle_hp_bars(self):
+        try:
+            self.show_hp_bars = self.toggle_hp_button.isChecked()
+            self.toggle_hp_button.setText("Masquer les barres de vie" if self.show_hp_bars else "Afficher les barres de vie")
+            self.update_ui()
+        except Exception as e:
+            log_debug(f"[ERROR] Exception dans toggle_hp_bars : {e}")
+            NotificationPopup(f"Erreur lors du switch barres de vie : {e}", 4000, self).show()
+
+    def toggle_invert_boards(self):
+        try:
+            self.invert_boards = self.invert_boards_button.isChecked()
+            self.update_ui()
+        except Exception as e:
+            log_debug(f"[ERROR] Exception dans toggle_invert_boards : {e}")
+            NotificationPopup(f"Erreur lors de l'inversion des boards : {e}", 4000, self).show()
+
+    def toggle_daltonian_mode(self):
+        try:
+            self.daltonian_mode = self.daltonian_button.isChecked()
+            self.update_ui()
+        except Exception as e:
+            log_debug(f"[ERROR] Exception dans toggle_daltonian_mode : {e}")
+            NotificationPopup(f"Erreur lors du switch daltonien : {e}", 4000, self).show()
+
+    def set_current_theme(self, theme):
+        if theme == 'DARK':
+            ThemeManager.apply(ThemeManager.DARK)
+        elif theme == 'LIGHT':
+            ThemeManager.apply(ThemeManager.LIGHT)
+        else:
+            ThemeManager.apply(ThemeManager.CONTRAST)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.forfeit()
+            event.accept()
+            return
+        elif event.key() == Qt.Key_F1:
+            html_content = """
+            <b>Raccourcis clavier :</b><br>
+            <ul>
+            <li><b>Échap</b> : Abandonner le combat (ou retour au menu)</li>
+            <li><b>F1</b> : Afficher cette aide</li>
+            <li><b>Tab</b> : Naviguer entre les éléments</li>
+            </ul>
+            <b>Conseils :</b><br>
+            - Cliquez ou utilisez Tab pour sélectionner vos unités et attaquer.<br>
+            - Utilisez les boutons pour activer les pouvoirs ou passer le tour.<br>
+            - Les barres de vie et effets sont affichés sur les cartes.<br>
+            """
+            dlg = HelpDialog('Aide - Combat', html_content, self)
+            dlg.exec_()
+            event.accept()
+            return
+        super().keyPressEvent(event) 
+play_menu.py  |  CardGame2/screens/play_menu.py
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QComboBox, QListWidget, QMessageBox, QTableWidget, QTableWidgetItem
+from CardGame2.data_manager import DataManager
+from CardGame2.models.hero import Hero
+from CardGame2.sets.base_set import get_base_set
+from CardGame2.models.player import Player, AIPlayer
+from CardGame2.combat.battle import Battle
+import random
+from typing import Optional
+from CardGame2.ui.components import (
+    StyledButton, StatsPanel, DeckPreviewPanel, LoadingPopup, HelpDialog, make_styled_button
+)
+from CardGame2.screens.combat_screen import CombatScreen
+import os
+from PyQt5.QtGui import QKeyEvent, QKeySequence
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QDialog
+from CardGame2.ui.style_constants import PLAY_BTN_STYLE, BACK_BTN_STYLE
+from CardGame2.ui.resources import UI_TEXTS
+
+data_manager = DataManager()
+
+class PlayMenu(QWidget):
+    def __init__(self, player_name: str, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        layout = QVBoxLayout()
+        self.label = QLabel("Mode de jeu :")
+        self.label.setToolTip(UI_TEXTS['play_label'])
+        self.solo_button = StyledButton("Solo")
+        self.solo_button.setToolTip(UI_TEXTS['solo_button'])
+        self.multi_button = StyledButton("Multi (à venir)")
+        self.multi_button.setEnabled(False)
+        self.multi_button.setToolTip(UI_TEXTS['multi_button'])
+        self.deck_label = QLabel("Choisissez un deck :")
+        self.deck_label.setToolTip(UI_TEXTS['deck_label'])
+        self.deck_combo = QComboBox()
+        self.deck_combo.addItems([f"Deck {i+1}" for i in range(5)])
+        self.deck_combo.setToolTip(UI_TEXTS['deck_combo'])
+        self.deck_cards_list = QListWidget()
+        self.deck_cards_list.setToolTip(UI_TEXTS['deck_cards_list'])
+        self.deck_summary_panel = StatsPanel("Résumé du deck", {"-": "-"})
+        self.deck_summary_panel.setToolTip(UI_TEXTS['deck_summary_panel'])
+        self.deck_preview_panel = DeckPreviewPanel({}, get_base_set())
+        self.deck_preview_panel.setToolTip(UI_TEXTS['deck_preview_panel'])
+        self.play_button = make_styled_button(
+            "Jouer !", PLAY_BTN_STYLE, "Lancer une partie contre l'IA", self.start_game
+        )
+        self.play_button.setToolTip(UI_TEXTS['play_play_button'])
+        self.back_button = make_styled_button(
+            "Retour", BACK_BTN_STYLE, "Retour au menu principal", self.return_to_main
+        )
+        self.back_button.setToolTip(UI_TEXTS['play_back_button'])
+        self.reset_history_button = StyledButton("Réinitialiser l'historique")
+        self.reset_history_button.setStyleSheet("background: #e74c3c; color: #fff; font-weight: bold; font-size: 15px; margin-top: 10px;")
+        self.reset_history_button.setToolTip(UI_TEXTS['reset_history_button'])
+        self.reset_history_button.clicked.connect(self.reset_history)
+        self.history_table = QTableWidget(0, 5)
+        self.history_table.setHorizontalHeaderLabels(["Date", "Deck", "Résultat", "Tours", "Récompense"])
+        self.history_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.history_table.setSelectionMode(QTableWidget.NoSelection)
+        self.history_table.setToolTip(UI_TEXTS['history_table'])
+        layout.addWidget(self.label)
+        layout.addWidget(self.solo_button)
+        layout.addWidget(self.multi_button)
+        layout.addWidget(self.deck_label)
+        layout.addWidget(self.deck_combo)
+        layout.addWidget(self.deck_summary_panel)
+        layout.addWidget(self.deck_preview_panel)
+        layout.addWidget(QLabel("Cartes du deck :"))
+        layout.addWidget(self.deck_cards_list)
+        layout.addWidget(self.history_table)
+        layout.addWidget(self.reset_history_button)
+        layout.addWidget(self.play_button)
+        layout.addWidget(self.back_button)
+        self.setLayout(layout)
+        self.solo_button.clicked.connect(self.start_game)
+        self.deck_combo.currentIndexChanged.connect(self.refresh_deck_cards)
+        self.back_button.clicked.connect(self.return_to_main)
+        self.refresh_deck_cards()
+        self.refresh_history()
+        self.setTabOrder(self.solo_button, self.deck_combo)
+        self.setTabOrder(self.deck_combo, self.back_button)
+        self.solo_button.setFocus()
+    def select_solo(self) -> None:
+        QMessageBox.information(self, "Solo", "Mode solo sélectionné. (À implémenter)")
+    def refresh_deck_cards(self) -> None:
+        self.loading_popup = LoadingPopup("Chargement du deck...", self)
+        self.loading_popup.show()
+        try:
+            idx = self.deck_combo.currentIndex()
+            decks = data_manager.get_decks()
+            self.deck_cards_list.clear()
+            if 0 <= idx < len(decks):
+                deck = decks[idx]
+                # Affichage des cartes (héros, unités, autres)
+                if deck.get("hero"):
+                    self.deck_cards_list.addItem(f"Héros : {deck['hero']['name']}")
+                if deck.get("units"):
+                    for u in deck["units"]:
+                        self.deck_cards_list.addItem(f"Unité : {u}")
+                if deck.get("cards"):
+                    for c in deck["cards"]:
+                        self.deck_cards_list.addItem(f"Carte : {c}")
+                self.deck_summary_panel.set_stats(self.deck_summary(deck))
+                self.deck_preview_panel.setParent(None)
+                self.deck_preview_panel = DeckPreviewPanel(deck, get_base_set())
+                layout_obj = self.layout()
+                if layout_obj is not None and hasattr(layout_obj, 'insertWidget'):
+                    layout_obj.insertWidget(6, self.deck_preview_panel)
+            else:
+                self.deck_summary_panel.set_stats({"-": "-"})
+                self.deck_preview_panel.setParent(None)
+                self.deck_preview_panel = DeckPreviewPanel({}, get_base_set())
+                layout_obj = self.layout()
+                if layout_obj is not None and hasattr(layout_obj, 'insertWidget'):
+                    layout_obj.insertWidget(6, self.deck_preview_panel)
+        finally:
+            self.loading_popup.close()
+    def deck_summary(self, deck) -> dict:
+        hero = deck.get("hero")
+        units = deck.get("units", [])
+        cards = deck.get("cards", [])
+        d = {}
+        if hero:
+            d["Héros"] = hero["name"]
+        d["Unités"] = f"{len(units)} / 4"
+        d["Autres cartes"] = f"{len(cards)}"
+        return d
+    def return_to_main(self) -> None:
+        self.parent().parent().go_to_menu(self.parent().parent().player_name)
+    def start_game(self) -> None:
+        self.loading_popup = LoadingPopup("Préparation du combat...", self)
+        self.loading_popup.show()
+        try:
+            idx = self.deck_combo.currentIndex()
+            decks = data_manager.get_decks()
+            base_cards = get_base_set()
+            def card_from_name(name):
+                return next((c for c in base_cards if c.name == name), None)
+            if 0 <= idx < len(decks):
+                deck = decks[idx]
+                # Création du joueur humain
+                hero = Hero.from_dict(deck["hero"]) if deck.get("hero") else None
+                player_deck = [card_from_name(n) for n in deck["cards"] if card_from_name(n)]
+                player = Player(self.parent().parent().player_name, deck=player_deck, hero=hero)
+                # Place les unités de départ sur le board
+                player.board = [card_from_name(n) for n in deck.get("units", []) if card_from_name(n)]
+                # (Optionnel) Pour afficher le héros comme carte sur le terrain :
+                # if hero: player.board.insert(0, hero)
+                # Création de l'IA
+                ai_decks = [d for d in decks if d.get("hero")]
+                if not ai_decks:
+                    QMessageBox.warning(self, "Erreur", "Aucun deck IA valide n'est disponible. Créez au moins un deck avec un héros.")
+                    return
+                ai_deck_data = random.choice(ai_decks)
+                ai_hero = Hero.from_dict(ai_deck_data["hero"])
+                ai_deck = [card_from_name(n) for n in ai_deck_data["cards"] if card_from_name(n)]
+                ai = AIPlayer("IA", deck=ai_deck, hero=ai_hero)
+                ai.board = [card_from_name(n) for n in ai_deck_data.get("units", []) if card_from_name(n)]
+                # (Optionnel) Pour afficher le héros IA comme carte :
+                # if ai_hero: ai.board.insert(0, ai_hero)
+                # Création du combat
+                battle = Battle(player, ai)
+                combat_screen = CombatScreen(player, ai, battle, parent=self.parent().parent())
+                self.loading_popup.close()
+                self.parent().parent().stack.addWidget(combat_screen)
+                self.parent().parent().stack.setCurrentWidget(combat_screen)
+                self.refresh_history()
+            else:
+                QMessageBox.warning(self, "Erreur", "Aucun deck sélectionné.")
+        finally:
+            self.loading_popup.close()
+    def refresh_history(self):
+        self.loading_popup = LoadingPopup("Chargement de l'historique...", self)
+        self.loading_popup.show()
+        try:
+            history = data_manager.get_game_history()
+            self.history_table.setRowCount(len(history))
+            for i, entry in enumerate(reversed(history)):
+                self.history_table.setItem(i, 0, QTableWidgetItem(entry.get('date', '')))
+                deck_str = ', '.join([c.name if hasattr(c, 'name') else str(c) for c in entry.get('deck', [])])
+                self.history_table.setItem(i, 1, QTableWidgetItem(deck_str))
+                self.history_table.setItem(i, 2, QTableWidgetItem(entry.get('resultat', '')))
+                self.history_table.setItem(i, 3, QTableWidgetItem(str(entry.get('tours', ''))))
+                self.history_table.setItem(i, 4, QTableWidgetItem(str(entry.get('recompense', ''))))
+        finally:
+            self.loading_popup.close()
+    def reset_history(self):
+        reply = QMessageBox.question(self, "Confirmation", "Voulez-vous vraiment effacer l'historique des parties ?", QMessageBox.Yes | QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            if os.path.exists(path):
+                os.remove(path)
+            self.refresh_history()
+    def set_daltonian_mode(self, daltonian: bool):
+        # À compléter : appliquer le mode daltonien aux widgets si besoin
+        pass
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.return_to_main()
+            event.accept()
+            return
+        elif event.key() == Qt.Key_F1:
+            html_content = """
+            <b>Raccourcis clavier :</b><br>
+            <ul>
+            <li><b>Échap</b> : Retour au menu principal</li>
+            <li><b>F1</b> : Afficher cette aide</li>
+            <li><b>Tab</b> : Naviguer entre les éléments</li>
+            </ul>
+            <b>Conseils :</b><br>
+            - Sélectionnez un deck pour jouer.<br>
+            - Consultez l'historique de vos parties.<br>
+            - Utilisez les boutons pour lancer une partie solo.<br>
+            """
+            dlg = HelpDialog('Aide - Menu Jouer', html_content, self)
+            dlg.exec_()
+            event.accept()
+            return
+        super().keyPressEvent(event) 
+deck_menu.py  |  CardGame2/screens/deck_menu.py
+import os
+
+def log_debug(msg):
+    with open(os.path.join(os.path.dirname(__file__), '../../debug_cardgame2.log'), 'a', encoding='utf-8') as f:
+        f.write(msg + '\n')
+
+from PyQt5.QtWidgets import (
+    QWidget, QVBoxLayout, QLabel, QPushButton, QListWidget, QListWidgetItem, QComboBox, QSpinBox, QDialog,
+    QFormLayout, QCheckBox, QDialogButtonBox, QMessageBox, QHBoxLayout, QTabWidget
+)
+from PyQt5.QtCore import QPropertyAnimation, Qt, QEvent
+from PyQt5.QtGui import QKeyEvent, QKeySequence
+from typing import Optional
+from CardGame2.data_manager import DataManager
+from CardGame2.sets.base_set import get_base_set
+from CardGame2.models.hero import Hero, HeroCustomization, HeroPassive
+from CardGame2.models.types import CardType
+from CardGame2.ui.components import (
+    StatsPanel, StyledButton, CardWidget, DeckPreviewPanel, LoadingPopup, HelpDialog, make_styled_button
+)
+from CardGame2.ui.style_constants import (
+    PLAY_BTN_STYLE, BACK_BTN_STYLE, DUPLICATE_BTN_STYLE, SAVE_BTN_STYLE, SUMMARY_LABEL_STYLE, TAB_STYLESHEET, LIST_STYLESHEET, PREVIEW_STYLESHEET
+)
+
+data_manager = DataManager()
+
+# Inclure ici la classe HeroCustomizationDialog si elle n'est pas utilisée ailleurs
+class HeroCustomizationDialog(QDialog):
+    def __init__(self, hero: Hero, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle(f"Personnalisation de {hero.name}")
+        self.hero = hero
+        self.customization = HeroCustomization()
+        if hero.customization:
+            self.customization.hp_level = hero.customization.hp_level
+            self.customization.attack_level = hero.customization.attack_level
+            self.customization.defense_level = hero.customization.defense_level
+            self.customization.passives = list(hero.customization.passives)
+            self.customization.total_cost = hero.customization.total_cost
+        layout = QFormLayout()
+        self.hp_spin = QSpinBox()
+        self.hp_spin.setRange(0, 3)
+        self.hp_spin.setValue(self.customization.hp_level)
+        self.hp_spin.valueChanged.connect(self.update_cost)
+        layout.addRow("Niveau PV (+5/PV)", self.hp_spin)
+        self.atk_spin = QSpinBox()
+        self.atk_spin.setRange(0, 3)
+        self.atk_spin.setValue(self.customization.attack_level)
+        self.atk_spin.valueChanged.connect(self.update_cost)
+        layout.addRow("Niveau ATK (+2/ATK)", self.atk_spin)
+        self.def_spin = QSpinBox()
+        self.def_spin.setRange(0, 3)
+        self.def_spin.setValue(self.customization.defense_level)
+        self.def_spin.valueChanged.connect(self.update_cost)
+        layout.addRow("Niveau DEF (+2/DEF)", self.def_spin)
+        self.passive_checks = []
+        passive_layout = QHBoxLayout()
+        for p in HeroPassive:
+            cb = QCheckBox(p.value)
+            cb.setChecked(p in self.customization.passives)
+            cb.stateChanged.connect(self.update_cost)
+            passive_layout.addWidget(cb)
+            self.passive_checks.append((p, cb))
+        layout.addRow("Passifs (3 pts chacun)", passive_layout)
+        self.cost_label = QLabel("")
+        layout.addRow("Coût total", self.cost_label)
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+        layout.addRow(self.button_box)
+        self.setLayout(layout)
+        self.update_cost()
+    def update_cost(self) -> None:
+        self.customization.hp_level = self.hp_spin.value()
+        self.customization.attack_level = self.atk_spin.value()
+        self.customization.defense_level = self.def_spin.value()
+        self.customization.passives = [p for p, cb in self.passive_checks if cb.isChecked()]
+        total = 0
+        total += sum([self.hp_spin.value(), self.atk_spin.value(), self.def_spin.value()])
+        total += 3 * len(self.customization.passives)
+        self.customization.total_cost = total
+        self.cost_label.setText(f"{total} / 15")
+        self.button_box.button(QDialogButtonBox.Ok).setEnabled(total <= 15)
+    def get_customization(self) -> HeroCustomization:
+        return self.customization
+
+class DeckMenu(QWidget):
+    def __init__(self, player_name: str, parent: Optional[QWidget] = None) -> None:
+        log_debug(f"[DEBUG] DeckMenu.__init__ tout début pour {player_name}, parent={parent}")
+        super().__init__(parent)
+        self.deck_preview_panel = None  # Correction : initialisation explicite
+        self.base_cards = get_base_set()
+        self.player_name = player_name
+        self.decks = data_manager.get_decks()
+        self.selected_hero = None
+        self.selected_units = []
+        self.selected_cards = []
+        self.current_deck_idx = None
+        self.loading_popup = None
+        self._init_ui()
+        DeckMenu.ensure_ai_deck_exists()
+        log_debug(f"[DEBUG] DeckMenu.__init__ fin pour {player_name}, self={self}, parent={self.parent()}")
+
+    def _init_ui(self):
+        log_debug(f"[DEBUG] DeckMenu._init_ui appelée pour {self.player_name}, self={self}")
+        main_layout = QHBoxLayout()
+        self.deck_selector = QComboBox()
+        self.deck_selector.addItems([f"Deck {i+1}" for i in range(5)])
+        self.deck_selector.currentIndexChanged.connect(self.change_deck_slot)
+        self.deck_selector.setToolTip("Sélectionnez le slot de deck à éditer")
+        main_layout.insertWidget(0, self.deck_selector)
+        self.current_deck_idx = 0
+        self.tabs = QTabWidget()
+        self._build_hero_tab()
+        self._build_unit_tab()
+        self._build_card_tab()
+        self.tabs.setStyleSheet(TAB_STYLESHEET)
+        self.tabs.setToolTip("Naviguez entre les onglets Héros, Unités et Cartes")
+        self.deck_list = QListWidget()
+        self.deck_list.setFixedWidth(200)
+        self.deck_list.setStyleSheet(LIST_STYLESHEET)
+        self.deck_list.itemEntered.connect(self.show_deck_card_preview)
+        self.deck_list.setMouseTracking(True)
+        self.deck_list.setToolTip("Liste des cartes actuellement dans le deck. Cliquez pour retirer.")
+        self.deck_card_preview = CardWidget("-", "-", "-", 0)
+        self.deck_card_preview.setStyleSheet(PREVIEW_STYLESHEET)
+        self.deck_card_preview.setVisible(False)
+        right_layout = QVBoxLayout()
+        right_layout.addWidget(QLabel("Deck actuel :"))
+        right_layout.addWidget(self.deck_list)
+        right_layout.addWidget(self.deck_card_preview)
+        self.duplicate_button = make_styled_button(
+            "Dupliquer ce deck", DUPLICATE_BTN_STYLE, "Duplique le deck actuel dans un autre slot", self.duplicate_deck
+        )
+        self.save_button = make_styled_button(
+            "Valider le deck", SAVE_BTN_STYLE, "Valide et sauvegarde la composition du deck", self.save_deck
+        )
+        self.deck_summary_label = QLabel()
+        self.deck_summary_label.setStyleSheet(SUMMARY_LABEL_STYLE)
+        right_layout.addWidget(self.deck_summary_label)
+        right_layout.addWidget(self.save_button)
+        self.back_button = make_styled_button(
+            "Retour", BACK_BTN_STYLE, "Retour au menu principal", self.return_to_main
+        )
+        right_layout.addWidget(self.back_button)
+        main_layout.addWidget(self.tabs)
+        main_layout.addLayout(right_layout)
+        self.setLayout(main_layout)
+        self.refresh_deck_list()
+        self.deck_list.itemClicked.connect(self.remove_card_from_deck)
+        self.installEventFilter(self)
+        self.load_deck_to_ui()
+        self.setTabOrder(self.deck_selector, self.tabs)
+        self.setTabOrder(self.tabs, self.deck_list)
+        self.setTabOrder(self.deck_list, self.duplicate_button)
+        self.setTabOrder(self.duplicate_button, self.save_button)
+        self.setTabOrder(self.save_button, self.back_button)
+        self.deck_selector.setFocus()
+
+    def _build_hero_tab(self):
+        self.hero_tab = QWidget()
+        hero_layout = QHBoxLayout()
+        hero_label = QLabel("<b>Sélectionnez votre héros :</b>")
+        hero_label.setStyleSheet("color: #ffae00; font-size: 16px;")
+        self.hero_list = QListWidget()
+        self.hero_list.setStyleSheet("background: #181a20; color: #f8f8f2; font-size: 15px;")
+        for h in self.get_heroes_base():
+            item = QListWidgetItem(h.name)
+            self.hero_list.addItem(item)
+        self.hero_list.currentRowChanged.connect(self.update_hero_preview)
+        self.choose_hero_button = StyledButton("Choisir ce héros")
+        self.choose_hero_button.setStyleSheet("background: #3a7afe; color: #fff; font-weight: bold;")
+        self.remove_hero_button = StyledButton("Retirer le héros")
+        self.remove_hero_button.setStyleSheet("background: #e74c3c; color: #fff; font-weight: bold;")
+        self.choose_hero_button.clicked.connect(self.choose_hero)
+        self.remove_hero_button.clicked.connect(self.remove_hero)
+        self.hero_preview = CardWidget("-", "HÉROS", "-", 0)
+        self.hero_preview.setToolTip("Aperçu du héros sélectionné")
+        hero_layout.addWidget(hero_label)
+        hero_layout.addWidget(self.hero_list)
+        hero_layout.addWidget(self.hero_preview)
+        hero_layout.addWidget(self.choose_hero_button)
+        hero_layout.addWidget(self.remove_hero_button)
+        self.hero_tab.setLayout(hero_layout)
+        self.hero_list.setToolTip("Liste des héros disponibles. Sélectionnez-en un pour l'ajouter au deck.")
+        self.choose_hero_button.setToolTip("Ajoute le héros sélectionné au deck")
+        self.remove_hero_button.setToolTip("Retire le héros du deck")
+        self.tabs.addTab(self.hero_tab, "Héros")
+
+    def _build_unit_tab(self):
+        self.unit_tab = QWidget()
+        unit_layout = QHBoxLayout()
+        unit_label = QLabel("<b>Unités disponibles (4 max, 2x max par unité) :</b>")
+        unit_label.setStyleSheet("color: #ffae00; font-size: 16px;")
+        self.unit_list = QListWidget()
+        self.unit_list.setStyleSheet("background: #181a20; color: #f8f8f2; font-size: 15px;")
+        for c in self.base_cards:
+            if c.card_type == CardType.UNIT:
+                item = QListWidgetItem(f"{c.name}")
+                self.unit_list.addItem(item)
+        self.unit_list.setDragEnabled(True)
+        self.unit_list.setSelectionMode(QListWidget.SingleSelection)
+        self.unit_list.itemDoubleClicked.connect(self.add_unit)
+        self.unit_list.viewport().setAcceptDrops(False)
+        self.deck_units_list = QListWidget()
+        self.deck_units_list.setStyleSheet("background: #181a20; color: #f8f8f2; font-size: 15px;")
+        self.deck_units_list.setAcceptDrops(True)
+        self.deck_units_list.setDragDropMode(QListWidget.DropOnly)
+        self.deck_units_list.setDefaultDropAction(Qt.MoveAction)
+        self.deck_units_list.itemDoubleClicked.connect(self.remove_unit)
+        self.deck_units_list.setToolTip("Unités actuellement dans le deck. Double-cliquez pour retirer.")
+        self.unit_preview = CardWidget("-", "UNITÉ", "-", 0)
+        self.unit_preview.setToolTip("Aperçu de l'unité sélectionnée")
+        self.add_unit_button = StyledButton("Ajouter unité")
+        self.add_unit_button.setStyleSheet("background: #3a7afe; color: #fff; font-weight: bold;")
+        self.add_unit_button.setToolTip("Ajoute l'unité sélectionnée au deck")
+        self.remove_unit_button = StyledButton("Retirer unité")
+        self.remove_unit_button.setStyleSheet("background: #e74c3c; color: #fff; font-weight: bold;")
+        self.remove_unit_button.setToolTip("Retire l'unité sélectionnée du deck")
+        self.add_unit_button.clicked.connect(self.add_unit)
+        self.remove_unit_button.clicked.connect(self.remove_unit)
+        self.add_all_units_button = StyledButton("Tout ajouter (unités)")
+        self.add_all_units_button.setToolTip("Ajoute toutes les unités possibles au deck (dans la limite autorisée)")
+        self.add_all_units_button.clicked.connect(self.add_all_units)
+        self.remove_all_units_button = StyledButton("Tout retirer (unités)")
+        self.remove_all_units_button.setToolTip("Retire toutes les unités du deck")
+        self.remove_all_units_button.clicked.connect(self.remove_all_units)
+        unit_layout.addWidget(unit_label)
+        unit_layout.addWidget(self.unit_list)
+        unit_layout.addWidget(self.unit_preview)
+        unit_layout.addWidget(self.deck_units_list)
+        unit_layout.addWidget(self.add_unit_button)
+        unit_layout.addWidget(self.remove_unit_button)
+        unit_layout.addWidget(self.add_all_units_button)
+        unit_layout.addWidget(self.remove_all_units_button)
+        self.unit_tab.setLayout(unit_layout)
+        self.unit_list.setToolTip("Liste des unités disponibles. Double-cliquez ou faites glisser pour ajouter.")
+        self.unit_preview.setToolTip("Aperçu de l'unité sélectionnée")
+        self.tabs.addTab(self.unit_tab, "Unités")
+
+    def _build_card_tab(self):
+        self.card_tab = QWidget()
+        card_layout = QHBoxLayout()
+        card_label = QLabel("<b>Cartes du deck (sorts, équipements, etc.) :</b>")
+        card_label.setStyleSheet("color: #ffae00; font-size: 16px;")
+        self.card_list = QListWidget()
+        self.card_list.setStyleSheet("background: #181a20; color: #f8f8f2; font-size: 15px;")
+        for c in self.base_cards:
+            if c.card_type not in (CardType.UNIT, CardType.HERO):
+                item = QListWidgetItem(f"{c.name} ({c.card_type.name})")
+                self.card_list.addItem(item)
+        self.card_list.setSelectionMode(QListWidget.SingleSelection)
+        self.card_list.currentRowChanged.connect(self.update_card_preview)
+        self.add_card_button = StyledButton("Ajouter carte")
+        self.add_card_button.setStyleSheet("background: #3a7afe; color: #fff; font-weight: bold;")
+        self.remove_card_button = StyledButton("Retirer carte")
+        self.remove_card_button.setStyleSheet("background: #e74c3c; color: #fff; font-weight: bold;")
+        self.add_card_button.clicked.connect(self.add_card)
+        self.remove_card_button.clicked.connect(self.remove_card)
+        self.add_all_cards_button = StyledButton("Tout ajouter (cartes)")
+        self.add_all_cards_button.setToolTip("Ajoute jusqu'à 20 cartes (2x max par carte)")
+        self.add_all_cards_button.clicked.connect(self.add_all_cards)
+        self.remove_all_cards_button = StyledButton("Tout retirer (cartes)")
+        self.remove_all_cards_button.setToolTip("Retire toutes les cartes du deck")
+        self.remove_all_cards_button.clicked.connect(self.remove_all_cards)
+        self.card_preview = CardWidget("-", "-", "-", 0)
+        card_layout.addWidget(card_label)
+        card_layout.addWidget(self.card_list)
+        card_layout.addWidget(self.card_preview)
+        card_layout.addWidget(self.add_card_button)
+        card_layout.addWidget(self.remove_card_button)
+        card_layout.addWidget(self.add_all_cards_button)
+        card_layout.addWidget(self.remove_all_cards_button)
+        self.card_tab.setLayout(card_layout)
+        self.card_list.setToolTip("Liste des cartes actuellement dans le deck. Cliquez pour retirer.")
+        self.tabs.addTab(self.card_tab, "Cartes")
+
+    def get_heroes_base(self):
+        return [Hero("Arthos", 30, 5, 3), Hero("Lyra", 25, 7, 2), Hero("Morgane", 22, 4, 6)]
+    def update_hero_preview(self, idx):
+        heroes = self.get_heroes_base()
+        if 0 <= idx < len(heroes):
+            h = heroes[idx]
+            if self.hero_preview is not None and self.hero_preview.parent() is not None:
+                self.hero_preview.setParent(None)
+            self.hero_preview = CardWidget(h.name, "HÉROS", "-", 0, h.base_attack, h.base_hp, f"DEF: {h.base_defense}")
+            layout = self.hero_tab.layout()
+            if hasattr(layout, 'insertWidget'):
+                layout.insertWidget(2, self.hero_preview)
+    def choose_hero(self):
+        log_debug(f"[DEBUG] DeckMenu.choose_hero appelée pour {self.player_name}")
+        idx = self.hero_list.currentRow()
+        heroes = self.get_heroes_base()
+        if 0 <= idx < len(heroes):
+            self.selected_hero = heroes[idx]
+            log_debug(f"choose_hero : {self.selected_hero}")
+            self.refresh_deck_list()
+    def remove_hero(self):
+        log_debug(f"[DEBUG] DeckMenu.remove_hero appelée pour {self.player_name}")
+        log_debug("remove_hero appelée")
+        self.selected_hero = None
+        self.refresh_deck_list()
+    def update_unit_preview(self):
+        idx = self.unit_list.currentRow()
+        units = [c for c in self.base_cards if c.card_type == CardType.UNIT]
+        if 0 <= idx < len(units):
+            u = units[idx]
+            if self.unit_preview is not None and self.unit_preview.parent() is not None:
+                self.unit_preview.setParent(None)
+            self.unit_preview = CardWidget(u.name, "UNITÉ", u.rarity.name, u.cost, u.attack, u.health, getattr(u, 'description', ''))
+            layout = self.unit_tab.layout()
+            if hasattr(layout, 'insertWidget'):
+                layout.insertWidget(2, self.unit_preview)
+    def _can_add_unit(self, name: str) -> bool:
+        if len(self.selected_units) >= 4:
+            return False
+        if self.selected_units.count(name) >= 2:
+            return False
+        return True
+
+    def _add_unit(self, name: str) -> bool:
+        if self._can_add_unit(name):
+            self.selected_units.append(name)
+            return True
+        return False
+
+    def _remove_unit(self, name: str) -> bool:
+        if name in self.selected_units:
+            self.selected_units.remove(name)
+            return True
+        return False
+
+    def add_unit(self, item=None):
+        log_debug(f"[DEBUG] DeckMenu.add_unit appelée pour {self.player_name}")
+        name = item.text() if item else self.unit_list.currentItem().text()
+        log_debug(f"add_unit appelée pour {name}")
+        count = sum(1 for i in range(self.deck_units_list.count()) if self.deck_units_list.item(i).text() == name)
+        if self.deck_units_list.count() >= 4:
+            self.deck_units_list.setStyleSheet(self.deck_units_list.styleSheet() + '\nborder: 2px solid #e74c3c;')
+            anim = QPropertyAnimation(self.deck_units_list, b"pos")
+            anim.setDuration(180)
+            anim.setKeyValueAt(0, self.deck_units_list.pos())
+            anim.setKeyValueAt(0.2, self.deck_units_list.pos() + Qt.QPoint(-10, 0))
+            anim.setKeyValueAt(0.5, self.deck_units_list.pos() + Qt.QPoint(10, 0))
+            anim.setKeyValueAt(0.8, self.deck_units_list.pos() + Qt.QPoint(-10, 0))
+            anim.setKeyValueAt(1, self.deck_units_list.pos())
+            anim.start()
+            QMessageBox.warning(self, "Limite atteinte", "Vous ne pouvez avoir que 4 unités dans le deck.")
+            return
+        if count >= 2:
+            anim = QPropertyAnimation(self.deck_units_list, b"pos")
+            anim.setDuration(180)
+            anim.setKeyValueAt(0, self.deck_units_list.pos())
+            anim.setKeyValueAt(0.2, self.deck_units_list.pos() + Qt.QPoint(-10, 0))
+            anim.setKeyValueAt(0.5, self.deck_units_list.pos() + Qt.QPoint(10, 0))
+            anim.setKeyValueAt(0.8, self.deck_units_list.pos() + Qt.QPoint(-10, 0))
+            anim.setKeyValueAt(1, self.deck_units_list.pos())
+            anim.start()
+            QMessageBox.warning(self, "Limite d'exemplaires", "Vous ne pouvez avoir que 2 exemplaires d'une même unité.")
+            return
+        self.deck_units_list.addItem(name)
+        self.deck_units_list.setStyleSheet(self.deck_units_list.styleSheet().replace('border: 2px solid #e74c3c;', ''))
+        self.update_deck_preview()
+        # Tooltip sur chaque carte du deck indiquant le nombre d'exemplaires
+        for i in range(self.deck_units_list.count()):
+            item = self.deck_units_list.item(i)
+            n = sum(1 for j in range(self.deck_units_list.count()) if self.deck_units_list.item(j).text() == item.text())
+            item.setToolTip(f"{item.text()} : {n} exemplaire(s) dans le deck")
+    def remove_unit(self, item=None):
+        log_debug(f"[DEBUG] DeckMenu.remove_unit appelée pour {self.player_name}")
+        log_debug("remove_unit appelée")
+        if isinstance(item, QListWidgetItem):
+            name = item.text().rsplit(' x', 1)[0]
+        else:
+            idx = self.deck_units_list.currentRow()
+            if idx < 0:
+                return
+            name = self.deck_units_list.item(idx).text().rsplit(' x', 1)[0]
+        if self._remove_unit(name):
+            self.refresh_deck_units_list()
+            self.refresh_deck_list()
+    def update_card_preview(self, idx):
+        cards = [c for c in self.base_cards if c.card_type not in (CardType.UNIT, CardType.HERO)]
+        if 0 <= idx < len(cards):
+            c = cards[idx]
+            if self.card_preview is not None and self.card_preview.parent() is not None:
+                self.card_preview.setParent(None)
+            self.card_preview = CardWidget(c.name, c.card_type.name, c.rarity.name, c.cost, getattr(c, 'attack', None), getattr(c, 'health', None), getattr(c, 'description', ''))
+            layout = self.card_tab.layout()
+            if hasattr(layout, 'insertWidget'):
+                layout.insertWidget(2, self.card_preview)
+    def _can_add_card(self, name: str) -> bool:
+        return self.selected_cards.count(name) < 3
+
+    def _add_card(self, name: str) -> bool:
+        if self._can_add_card(name):
+            self.selected_cards.append(name)
+            return True
+        return False
+
+    def add_card(self):
+        log_debug(f"[DEBUG] DeckMenu.add_card appelée pour {self.player_name}")
+        name = self.card_list.currentItem().text()
+        log_debug(f"add_card appelée pour {name}")
+        count = sum(1 for i in range(self.deck_list.count()) if self.deck_list.item(i).text().startswith(name))
+        if self.deck_list.count() >= 20:
+            self.deck_list.setStyleSheet(self.deck_list.styleSheet() + '\nborder: 2px solid #e74c3c;')
+            anim = QPropertyAnimation(self.deck_list, b"pos")
+            anim.setDuration(180)
+            anim.setKeyValueAt(0, self.deck_list.pos())
+            anim.setKeyValueAt(0.2, self.deck_list.pos() + Qt.QPoint(-10, 0))
+            anim.setKeyValueAt(0.5, self.deck_list.pos() + Qt.QPoint(10, 0))
+            anim.setKeyValueAt(0.8, self.deck_list.pos() + Qt.QPoint(-10, 0))
+            anim.setKeyValueAt(1, self.deck_list.pos())
+            anim.start()
+            QMessageBox.warning(self, "Limite atteinte", "Vous ne pouvez avoir que 20 cartes dans le deck.")
+            return
+        if count >= 2:
+            anim = QPropertyAnimation(self.deck_list, b"pos")
+            anim.setDuration(180)
+            anim.setKeyValueAt(0, self.deck_list.pos())
+            anim.setKeyValueAt(0.2, self.deck_list.pos() + Qt.QPoint(-10, 0))
+            anim.setKeyValueAt(0.5, self.deck_list.pos() + Qt.QPoint(10, 0))
+            anim.setKeyValueAt(0.8, self.deck_list.pos() + Qt.QPoint(-10, 0))
+            anim.setKeyValueAt(1, self.deck_list.pos())
+            anim.start()
+            QMessageBox.warning(self, "Limite d'exemplaires", "Vous ne pouvez avoir que 2 exemplaires d'une même carte.")
+            return
+        self.deck_list.addItem(name)
+        self.deck_list.setStyleSheet(self.deck_list.styleSheet().replace('border: 2px solid #e74c3c;', ''))
+        self.update_deck_preview()
+        # Tooltip sur chaque carte du deck indiquant le nombre d'exemplaires
+        for i in range(self.deck_list.count()):
+            item = self.deck_list.item(i)
+            n = sum(1 for j in range(self.deck_list.count()) if self.deck_list.item(j).text() == item.text())
+            item.setToolTip(f"{item.text()} : {n} exemplaire(s) dans le deck")
+    def _remove_card(self, name: str) -> bool:
+        if name in self.selected_cards:
+            self.selected_cards.remove(name)
+            return True
+        return False
+
+    def remove_card(self):
+        log_debug(f"[DEBUG] DeckMenu.remove_card appelée pour {self.player_name}")
+        log_debug("remove_card appelée")
+        idx = self.card_list.currentRow()
+        cards = [c for c in self.base_cards if c.card_type not in (CardType.UNIT, CardType.HERO)]
+        if 0 <= idx < len(cards):
+            name = cards[idx].name
+            if self._remove_card(name):
+                self.refresh_deck_list()
+    def refresh_deck_list(self):
+        self.deck_list.clear()
+        if self.selected_hero:
+            self.deck_list.addItem(f"Héros : {self.selected_hero.name}")
+        for u in self.selected_units:
+            self.deck_list.addItem(f"Unité : {u}")
+        for c in self.selected_cards:
+            self.deck_list.addItem(f"Carte : {c}")
+        # Affiche le résumé
+        hero = self.selected_hero.name if self.selected_hero else "-"
+        units = ', '.join(self.selected_units) if self.selected_units else "-"
+        cards = ', '.join(self.selected_cards) if self.selected_cards else "-"
+        self.deck_summary_label.setText(f"<b>Résumé du deck :</b><br>Héros : {hero}<br>Unités : {units}<br>Cartes : {cards}")
+    def show_deck_card_preview(self, item):
+        name = item.text().split(': ', 1)[-1]
+        card = next((c for c in self.base_cards if c.name == name), None)
+        if card:
+            if self.deck_card_preview is not None and self.deck_card_preview.parent() is not None:
+                self.deck_card_preview.setParent(None)
+            self.deck_card_preview = CardWidget(card.name, getattr(card, 'card_type', '-'), getattr(card, 'rarity', '-'), getattr(card, 'cost', 0), getattr(card, 'attack', None), getattr(card, 'health', None), getattr(card, 'description', ''))
+            right_layout = self.layout().itemAt(1)
+            if right_layout is not None and hasattr(right_layout, 'addWidget'):
+                right_layout.addWidget(self.deck_card_preview)
+            self.deck_card_preview.setVisible(True)
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.MouseButtonPress:
+            if self.deck_card_preview.isVisible():
+                self.deck_card_preview.setVisible(False)
+        return super().eventFilter(obj, event)
+    def save_deck(self):
+        log_debug(f"[DEBUG] DeckMenu.save_deck appelée pour {self.player_name}")
+        log_debug("save_deck appelée")
+        self.loading_popup = LoadingPopup("Sauvegarde du deck...", self)
+        self.loading_popup.show()
+        try:
+            if not self.selected_hero:
+                log_debug("save_deck : pas de héros sélectionné")
+                QMessageBox.warning(self, "Erreur", "Vous devez choisir un héros.")
+                return
+            if len(self.selected_units) != 4:
+                log_debug("save_deck : mauvais nombre d'unités")
+                QMessageBox.warning(self, "Erreur", "Vous devez choisir 4 unités.")
+                return
+            if not self.selected_cards:
+                log_debug("save_deck : aucune carte sélectionnée")
+                QMessageBox.warning(self, "Erreur", "Vous devez ajouter au moins une carte.")
+                return
+            deck = {
+                "hero": self.selected_hero.to_dict(),
+                "units": self.selected_units,
+                "cards": self.selected_cards.copy()
+            }
+            self.decks[self.current_deck_idx] = deck
+            data_manager.set_deck(self.current_deck_idx, deck)
+            log_debug(f"save_deck : deck sauvegardé {deck}")
+            QMessageBox.information(self, "Sauvegarde", "Deck sauvegardé !")
+        finally:
+            log_debug("save_deck : fin")
+            self.loading_popup.close()
+    def update_deck_preview(self):
+        # Met à jour l'aperçu du deck dans le conteneur dédié
+        hero = self.selected_hero.to_dict() if self.selected_hero else None
+        selected_units = self.selected_units.copy()
+        deck = {
+            "hero": hero,
+            "units": selected_units,
+            "cards": self.selected_cards.copy()
+        }
+        # Supprime l'ancien aperçu s'il existe
+        if self.deck_preview_panel is not None:
+            self.deck_preview_layout.removeWidget(self.deck_preview_panel)
+            self.deck_preview_panel.deleteLater()
+        self.deck_preview_panel = DeckPreviewPanel(deck, self.base_cards)
+        self.deck_preview_layout.addWidget(self.deck_preview_panel)
+    def return_to_main(self) -> None:
+        log_debug(f"[DEBUG] DeckMenu.return_to_main appelée pour {self.player_name}")
+        log_debug("Retour au menu principal depuis DeckMenu")
+        self.parent().parent().go_to_menu(self.parent().parent().player_name)
+    def update_unit_stats_panel(self):
+        idx = self.unit_list.currentRow()
+        units = [c for c in self.base_cards if c.card_type == CardType.UNIT]
+        if 0 <= idx < len(units):
+            unit = units[idx]
+            stats = {"Nom": unit.name, "ATK": unit.attack, "PV": unit.health, "Description": getattr(unit, 'description', '-')}
+            self.unit_stats_panel.set_stats(stats)
+        else:
+            self.unit_stats_panel.set_stats({"-": "-"})
+    def update_card_stats_panel(self):
+        idx = self.card_list.currentRow()
+        others = [c for c in self.base_cards if c.card_type not in (CardType.UNIT, CardType.HERO)]
+        if 0 <= idx < len(others):
+            card = others[idx]
+            stats = {"Nom": card.name, "Type": card.card_type.name, "Rareté": card.rarity.name, "Coût": getattr(card, 'cost', '-')}
+            if hasattr(card, 'description') and card.description:
+                stats["Description"] = card.description
+            self.card_stats_panel.set_stats(stats)
+        else:
+            self.card_stats_panel.set_stats({"-": "-"})
+    def refresh_deck_units_list(self):
+        self.deck_units_list.clear()
+        # Affiche chaque unité avec son compteur
+        for name in sorted(set(self.selected_units)):
+            count = self.selected_units.count(name)
+            self.deck_units_list.addItem(f"{name} x{count}")
+    # Drag & drop support
+    def dragEnterEvent(self, event):
+        if event.source() == self.unit_list:
+            event.acceptProposedAction()
+    def dropEvent(self, event):
+        if event.source() == self.unit_list:
+            idx = self.unit_list.indexAt(event.pos()).row()
+            if idx >= 0:
+                name = self.unit_list.item(idx).text()
+                self.add_unit(self.unit_list.item(idx))
+            event.acceptProposedAction()
+    def remove_card_from_deck(self, item):
+        text = item.text()
+        if text.startswith("Héros :"):
+            self.selected_hero = None
+        elif text.startswith("Unité :"):
+            name = text.split(': ', 1)[-1]
+            if name in self.selected_units:
+                self.selected_units.remove(name)
+        elif text.startswith("Carte :"):
+            name = text.split(': ', 1)[-1]
+            if name in self.selected_cards:
+                self.selected_cards.remove(name)
+        self.refresh_deck_list()
+    def change_deck_slot(self, idx):
+        self.current_deck_idx = idx
+        self.load_deck_to_ui()
+    def load_deck_to_ui(self):
+        self.loading_popup = LoadingPopup("Chargement du deck...", self)
+        self.loading_popup.show()
+        try:
+            deck = self.decks[self.current_deck_idx]
+            # Héros
+            if deck.get("hero"):
+                hero_name = deck["hero"]["name"]
+                heroes = self.get_heroes_base()
+                idx = [h.name for h in heroes].index(hero_name) if hero_name in [h.name for h in heroes] else 0
+                self.hero_list.setCurrentRow(idx)
+                self.selected_hero = heroes[idx]
+            else:
+                self.selected_hero = None
+            # Unités
+            self.selected_units = deck.get("units", []).copy()
+            # Cartes
+            self.selected_cards = deck.get("cards", []).copy()
+            self.refresh_deck_list()
+        finally:
+            self.loading_popup.close()
+    # Création d'un deck IA par défaut si aucun deck IA n'existe
+    @staticmethod
+    def ensure_ai_deck_exists():
+        decks = data_manager.get_decks()
+        has_ai = any(d.get("hero") for d in decks)
+        if not has_ai:
+            from CardGame2.models.hero import Hero
+            from CardGame2.sets.base_set import get_base_set
+            base_cards = get_base_set()
+            hero = Hero("Arthos", 30, 5, 3)
+            units = [c.name for c in base_cards if getattr(c, 'card_type', None) and c.card_type.name == 'UNIT'][:4]
+            cards = [c.name for c in base_cards if getattr(c, 'card_type', None) and c.card_type.name not in ('UNIT', 'HERO')][:5]
+            ai_deck = {"hero": hero.to_dict(), "units": units, "cards": cards}
+            data_manager.set_deck(0, ai_deck)
+
+    def duplicate_deck(self):
+        log_debug(f"[DEBUG] DeckMenu.duplicate_deck appelée pour {self.player_name}")
+        log_debug("duplicate_deck appelée")
+        self.loading_popup = LoadingPopup("Duplication du deck...", self)
+        self.loading_popup.show()
+        try:
+            idx = self.deck_selector.currentIndex()
+            decks = data_manager.get_decks()
+            if 0 <= idx < len(decks):
+                # Cherche un slot libre
+                for i, d in enumerate(decks):
+                    if not d.get('hero') and not d.get('units') and not d.get('cards'):
+                        decks[i] = {k: v for k, v in decks[idx].items()}
+                        data_manager.save_decks(decks)
+                        log_debug(f"duplicate_deck : deck copié dans le slot {i+1}")
+                        QMessageBox.information(self, "Duplication", f"Deck copié dans le slot {i+1} !")
+                        self.deck_selector.setCurrentIndex(i)
+                        self.refresh_deck_list()
+                        return
+                log_debug("duplicate_deck : aucun slot libre")
+                QMessageBox.warning(self, "Duplication", "Aucun slot libre pour dupliquer ce deck.")
+            else:
+                log_debug("duplicate_deck : aucun deck sélectionné")
+                QMessageBox.warning(self, "Duplication", "Aucun deck sélectionné.")
+        finally:
+            log_debug("duplicate_deck : fin")
+            self.loading_popup.close()
+
+    def set_daltonian_mode(self, daltonian: bool):
+        if hasattr(self, 'hero_preview') and self.hero_preview:
+            self.hero_preview.set_aura(True, daltonian_mode=daltonian)
+        if hasattr(self, 'unit_preview') and self.unit_preview:
+            self.unit_preview.set_aura(True, daltonian_mode=daltonian)
+        if hasattr(self, 'card_preview') and self.card_preview:
+            self.card_preview.set_aura(True, daltonian_mode=daltonian)
+
+    def add_all_units(self):
+        log_debug(f"[DEBUG] DeckMenu.add_all_units appelée pour {self.player_name}")
+        log_debug("add_all_units appelée")
+        units = [c for c in self.base_cards if c.card_type == CardType.UNIT]
+        self.selected_units = []
+        for u in units:
+            if len(self.selected_units) < 4:
+                self.selected_units.extend([u.name] * min(2, 4 - len(self.selected_units)))
+        log_debug(f"add_all_units : {self.selected_units}")
+        self.refresh_deck_list()
+        self.refresh_deck_units_list()
+
+    def remove_all_units(self):
+        log_debug(f"[DEBUG] DeckMenu.remove_all_units appelée pour {self.player_name}")
+        log_debug("remove_all_units appelée")
+        self.selected_units = []
+        self.refresh_deck_list()
+        self.refresh_deck_units_list()
+
+    def add_all_cards(self):
+        log_debug(f"[DEBUG] DeckMenu.add_all_cards appelée pour {self.player_name}")
+        log_debug("add_all_cards appelée")
+        # Ajoute jusqu'à 20 cartes (2x max par carte différente)
+        cards = [c for c in self.base_cards if c.card_type not in (CardType.UNIT, CardType.HERO)]
+        self.selected_cards = []
+        count = 0
+        for c in cards:
+            for _ in range(2):
+                if count < 20:
+                    self.selected_cards.append(c.name)
+                    count += 1
+        log_debug(f"add_all_cards : {self.selected_cards}")
+        self.refresh_deck_list()
+
+    def remove_all_cards(self):
+        log_debug(f"[DEBUG] DeckMenu.remove_all_cards appelée pour {self.player_name}")
+        log_debug("remove_all_cards appelée")
+        self.selected_cards = []
+        self.refresh_deck_list()
+
+    def keyPressEvent(self, event):
+        log_debug(f"[DEBUG] DeckMenu.keyPressEvent : key={event.key()} pour {self.player_name}")
+        log_debug(f"keyPressEvent DeckMenu : key={event.key()}")
+        if event.key() == Qt.Key_Escape:
+            self.return_to_main()
+            event.accept()
+            return
+        elif event.key() == Qt.Key_F1:
+            html_content = """
+            <b>Raccourcis clavier :</b><br>
+            <ul>
+            <li><b>Échap</b> : Retour au menu principal</li>
+            <li><b>F1</b> : Afficher cette aide</li>
+            <li><b>Tab</b> : Naviguer entre les éléments</li>
+            </ul>
+            <b>Conseils :</b><br>
+            - Double-cliquez ou utilisez les boutons pour ajouter/retirer des cartes et unités.<br>
+            - Utilisez les boutons 'Tout ajouter'/'Tout retirer' pour gérer rapidement votre deck.<br>
+            - Les limites de deck sont indiquées dans les info-bulles.<br>
+            """
+            dlg = HelpDialog('Aide - Éditeur de deck', html_content, self)
+            dlg.exec_()
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
+    def showEvent(self, event):
+        log_debug(f"[DEBUG] DeckMenu.showEvent pour {self.player_name}, self={self}, visible={self.isVisible()}")
+        super().showEvent(event)
+
+    def setVisible(self, visible):
+        log_debug(f"[DEBUG] DeckMenu.setVisible({visible}) pour {self.player_name}, self={self}")
+        super().setVisible(visible)
+
+    def focusInEvent(self, event):
+        log_debug(f"[DEBUG] DeckMenu.focusInEvent pour {self.player_name}, self={self}")
+        super().focusInEvent(event) 
+shop_menu.py  |  CardGame2/screens/shop_menu.py
+import os
+
+def log_debug(msg):
+    with open(os.path.join(os.path.dirname(__file__), '../../debug_cardgame2.log'), 'a', encoding='utf-8') as f:
+        f.write(msg + '\n')
+
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QMessageBox
+from CardGame2.data_manager import DataManager
+from CardGame2.sets.base_set import get_base_set
+from CardGame2.boosters.booster import generate_booster
+from typing import Optional
+from CardGame2.ui.components import StyledButton, StatsPanel, CardWidget, NotificationPopup, LoadingPopup, HelpDialog, make_styled_button
+from PyQt5.QtCore import QPropertyAnimation, QPoint, QTimer, Qt
+from PyQt5.QtWidgets import QApplication, QDialog
+from PyQt5.QtGui import QKeyEvent, QKeySequence
+from CardGame2.ui.style_constants import BUY_BTN_STYLE, BACK_BTN_STYLE
+from CardGame2.ui.resources import UI_TEXTS
+
+data_manager = DataManager()
+
+class ShopMenu(QWidget):
+    BOOSTER_COST = 0
+    def __init__(self, player_name: str, parent: Optional[QWidget] = None) -> None:
+        log_debug(f"[DEBUG] ShopMenu.__init__ début pour {player_name}, parent={parent}")
+        super().__init__(parent)
+        layout = QVBoxLayout()
+        self.label = QLabel("Boutique : Achetez des boosters")
+        self.unit_button = StyledButton(f"Acheter 1 booster (Gratuit)")
+        self.pack_button = StyledButton(f"Acheter un pack de 5 boosters (Gratuit)")
+        self.currency_label = QLabel(f"Monnaie : {data_manager.get_currency()} 🪙")
+        self.stats_panel = StatsPanel("Dernière carte obtenue", {"-": "-"})
+        self.card_widget = CardWidget("-", "-", "-", 0)
+        self.buy_button = make_styled_button(
+            "Acheter un booster (100)", BUY_BTN_STYLE, "Acheter un booster pour 100 pièces", lambda: self.buy_boosters(1)
+        )
+        self.back_button = make_styled_button(
+            "Retour", BACK_BTN_STYLE, "Retour au menu principal", self.return_to_main
+        )
+        self.label.setToolTip(UI_TEXTS['shop_label'])
+        self.unit_button.setToolTip(UI_TEXTS['unit_button'])
+        self.pack_button.setToolTip(UI_TEXTS['pack_button'])
+        self.currency_label.setToolTip(UI_TEXTS['currency_label'])
+        self.stats_panel.setToolTip(UI_TEXTS['shop_stats_panel'])
+        self.card_widget.setToolTip(UI_TEXTS['shop_card_widget'])
+        self.buy_button.setToolTip(UI_TEXTS['buy_button'])
+        self.back_button.setToolTip(UI_TEXTS['shop_back_button'])
+        layout.addWidget(self.label)
+        layout.addWidget(self.currency_label)
+        layout.addWidget(self.unit_button)
+        layout.addWidget(self.pack_button)
+        layout.addWidget(self.stats_panel)
+        layout.addWidget(self.card_widget)
+        layout.addWidget(self.buy_button)
+        layout.addWidget(self.back_button)
+        self.setLayout(layout)
+        self.unit_button.clicked.connect(self.buy_one)
+        self.pack_button.clicked.connect(self.buy_pack)
+        self.buy_button.clicked.connect(lambda: self.buy_boosters(1))
+        self.back_button.clicked.connect(self.return_to_main)
+        self.setTabOrder(self.unit_button, self.pack_button)
+        self.setTabOrder(self.pack_button, self.buy_button)
+        self.setTabOrder(self.buy_button, self.back_button)
+        self.unit_button.setFocus()
+        log_debug(f"[DEBUG] ShopMenu.__init__ fin pour {player_name}, self={self}, parent={self.parent()}")
+    def buy_one(self) -> None:
+        self.buy_boosters(1)
+    def buy_pack(self) -> None:
+        self.buy_boosters(5)
+    def buy_boosters(self, count: int) -> None:
+        log_debug(f"[DEBUG] buy_boosters appelé avec count={count}")
+        loading = LoadingPopup("Ouverture du booster...", self)
+        loading.show()
+        QApplication.processEvents()
+        total_cost = self.BOOSTER_COST * count
+        if data_manager.get_currency() < total_cost:
+            loading.close()
+            log_debug("[DEBUG] Pas assez de monnaie pour acheter le booster")
+            QMessageBox.warning(self, "Boutique", "Pas assez de monnaie !")
+            return
+        data_manager.spend_currency(total_cost)
+        card_pool = get_base_set()
+        collection = data_manager.get_collection()
+        gain = 0
+        last_card = None
+        doublon = False
+        for _ in range(count):
+            booster = generate_booster(card_pool)
+            log_debug(f"[DEBUG] Booster généré : {[card.name for card in booster]}")
+            for card in booster:
+                name = card.name
+                if collection.get(name, 0) < 2:
+                    collection[name] = collection.get(name, 0) + 1
+                    log_debug(f"[DEBUG] Nouvelle carte obtenue : {name}")
+                else:
+                    gain += int(self.BOOSTER_COST * 0.1)
+                    doublon = True
+                    log_debug(f"[DEBUG] Doublon pour {name}, gain +{int(self.BOOSTER_COST * 0.1)}")
+                last_card = card
+        data_manager.set_collection(collection)
+        if gain > 0:
+            data_manager.add_currency(gain)
+            log_debug(f"[DEBUG] Gain total sur doublons : {gain}")
+            NotificationPopup(f"+{gain} 🪙 pour les doublons !", 2000, self).show()
+        self.currency_label.setText(f"Monnaie : {data_manager.get_currency()} 🪙")
+        log_debug(f"[DEBUG] Monnaie après achat : {data_manager.get_currency()}")
+        if last_card:
+            self.stats_panel.set_stats(self.card_stats(last_card))
+            self.card_widget.setParent(None)
+            self.card_widget = CardWidget(last_card.name, last_card.card_type.name, last_card.rarity.name, getattr(last_card, 'cost', 0), getattr(last_card, 'attack', None), getattr(last_card, 'health', None), getattr(last_card, 'description', ''))
+            layout_obj = self.layout()
+            if layout_obj is not None and hasattr(layout_obj, 'insertWidget'):
+                layout_obj.insertWidget(6, self.card_widget)
+            self.card_widget.setWindowOpacity(0.0)
+            anim = QPropertyAnimation(self.card_widget, b"windowOpacity")
+            anim.setDuration(300)
+            anim.setStartValue(0.0)
+            anim.setEndValue(1.0)
+            anim.start()
+            self._last_anim = anim
+            # Animation de secousse
+            shake = QPropertyAnimation(self.card_widget, b"pos")
+            shake.setDuration(180)
+            shake.setKeyValueAt(0, self.card_widget.pos())
+            shake.setKeyValueAt(0.2, self.card_widget.pos() + self.card_widget.mapToParent(QPoint(-10, 0)))
+            shake.setKeyValueAt(0.5, self.card_widget.pos() + self.card_widget.mapToParent(QPoint(10, 0)))
+            shake.setKeyValueAt(0.8, self.card_widget.pos() + self.card_widget.mapToParent(QPoint(-10, 0)))
+            shake.setKeyValueAt(1, self.card_widget.pos())
+            shake.start()
+            self.card_widget.play_sound('victory' if not doublon else 'effect_expire')
+        else:
+            self.stats_panel.set_stats({"-": "-"})
+            self.card_widget.setParent(None)
+            self.card_widget = CardWidget("-", "-", "-", 0)
+            layout_obj = self.layout()
+            if layout_obj is not None and hasattr(layout_obj, 'insertWidget'):
+                layout_obj.insertWidget(6, self.card_widget)
+        NotificationPopup(f"Vous avez ouvert {count} booster(s) !", 2000, self).show()
+        QTimer.singleShot(1000, loading.close)
+        log_debug("[DEBUG] Fin de buy_boosters")
+    def card_stats(self, card) -> dict:
+        d = {"Nom": card.name, "Type": card.card_type.name, "Rareté": card.rarity.name, "Coût": getattr(card, 'cost', '-')}
+        if hasattr(card, 'attack') and hasattr(card, 'health'):
+            d["ATK"] = getattr(card, 'attack', '-')
+            d["PV"] = getattr(card, 'health', '-')
+        if hasattr(card, 'description') and card.description:
+            d["Description"] = card.description
+        return d
+    def return_to_main(self) -> None:
+        log_debug("[DEBUG] Retour au menu principal depuis ShopMenu")
+        self.parent().parent().go_to_menu(self.parent().parent().player_name)
+    def set_daltonian_mode(self, daltonian: bool):
+        log_debug(f"[DEBUG] set_daltonian_mode appelé avec daltonian={daltonian}")
+        if hasattr(self, 'card_widget') and self.card_widget:
+            self.card_widget.set_aura(True, daltonian_mode=daltonian)
+    def keyPressEvent(self, event):
+        log_debug(f"[DEBUG] keyPressEvent ShopMenu : key={event.key()}")
+        if event.key() == Qt.Key_Escape:
+            self.return_to_main()
+            event.accept()
+            return
+        elif event.key() == Qt.Key_F1:
+            html_content = """
+            <b>Raccourcis clavier :</b><br>
+            <ul>
+            <li><b>Échap</b> : Retour au menu principal</li>
+            <li><b>F1</b> : Afficher cette aide</li>
+            <li><b>Tab</b> : Naviguer entre les éléments</li>
+            </ul>
+            <b>Conseils :</b><br>
+            - Achetez des boosters pour agrandir votre collection.<br>
+            - Les cartes en double sont converties en monnaie bonus.<br>
+            - Cliquez sur une carte pour voir ses détails.<br>
+            """
+            dlg = HelpDialog('Aide - Boutique', html_content, self)
+            dlg.exec_()
+            event.accept()
+            return
+        super().keyPressEvent(event)
+    def showEvent(self, event):
+        log_debug(f"[DEBUG] ShopMenu.showEvent pour {self.player_name}, self={self}, visible={self.isVisible()}")
+        super().showEvent(event)
+    def setVisible(self, visible):
+        log_debug(f"[DEBUG] ShopMenu.setVisible({visible}) pour {self.player_name}, self={self}")
+        super().setVisible(visible)
+    def focusInEvent(self, event):
+        log_debug(f"[DEBUG] ShopMenu.focusInEvent pour {self.player_name}, self={self}")
+        super().focusInEvent(event) 
+main_menu.py  |  CardGame2/screens/main_menu.py
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
+from CardGame2.data_manager import DataManager
+from PyQt5.QtWidgets import QMessageBox
+from typing import Optional
+from CardGame2.ui.components import StyledButton, LoadingPopup
+from CardGame2.ui.theme_manager import ThemeManager
+from CardGame2.ui.resources import UI_TEXTS
+
+data_manager = DataManager()
+
+class MainMenu(QWidget):
+    def __init__(self, player_name: str, parent: Optional[QWidget] = None) -> None:
+        print(f"[DEBUG] MainMenu.__init__ appelé avec player_name={player_name}, parent={parent}")
+        try:
+            super().__init__(parent)
+            self._layout = QVBoxLayout()
+            # Theme selector
+            self.theme_combo = StyledButton("Thème : Sombre")
+            self.theme_combo.setToolTip(UI_TEXTS['theme_combo'])
+            self.theme_combo.clicked.connect(self.toggle_theme)
+            self.current_theme = 'DARK'
+            self._layout.addWidget(self.theme_combo)
+            self.label = QLabel(f"Bienvenue, {player_name} !")
+            self.currency_label = QLabel(f"Monnaie : {data_manager.get_currency()} 🪙")
+            self.play_button = StyledButton("Jouer")
+            self.play_button.setToolTip(UI_TEXTS['play_button'])
+            self.deck_button = StyledButton("Création de Deck")
+            self.deck_button.setToolTip(UI_TEXTS['deck_button'])
+            self.shop_button = StyledButton("Boutique")
+            self.shop_button.setToolTip(UI_TEXTS['shop_button'])
+            self.collection_button = StyledButton("Collection")
+            self.collection_button.setToolTip(UI_TEXTS['collection_button'])
+            self.profile_button = StyledButton("Changer de profil")
+            self.profile_button.setToolTip(UI_TEXTS['profile_button'])
+            self.logout_button = StyledButton("Retour (Déconnexion)")
+            self.logout_button.setToolTip(UI_TEXTS['logout_button'])
+            self._layout.addWidget(self.label)
+            self._layout.addWidget(self.currency_label)
+            self._layout.addWidget(self.play_button)
+            self._layout.addWidget(self.deck_button)
+            self._layout.addWidget(self.shop_button)
+            self._layout.addWidget(self.collection_button)
+            self._layout.addWidget(self.profile_button)
+            self._layout.addWidget(self.logout_button)
+            self.setLayout(self._layout)
+            self.play_button.clicked.connect(lambda: (print(f"[DEBUG] play_button cliqué pour {player_name}"), self.window().go_to_play_menu(player_name)))
+            self.deck_button.clicked.connect(lambda: (print(f"[DEBUG] deck_button cliqué pour {player_name}"), self.window().go_to_deck_menu(player_name)))
+            self.shop_button.clicked.connect(lambda: (print(f"[DEBUG] shop_button cliqué pour {player_name}"), self.window().go_to_shop_menu(player_name)))
+            self.collection_button.clicked.connect(lambda: (print(f"[DEBUG] collection_button cliqué pour {player_name}"), self.window().go_to_collection_menu(player_name)))
+            self.profile_button.clicked.connect(lambda: (print(f"[DEBUG] profile_button cliqué"), self.change_profile()))
+            self.logout_button.clicked.connect(lambda: (print(f"[DEBUG] logout_button cliqué"), self.return_to_login()))
+            self.setFocusPolicy(1)
+            ThemeManager.apply(ThemeManager.DARK)
+            self.setTabOrder(self.theme_combo, self.play_button)
+            self.setTabOrder(self.play_button, self.deck_button)
+            self.setTabOrder(self.deck_button, self.shop_button)
+            self.setTabOrder(self.shop_button, self.collection_button)
+            self.setTabOrder(self.collection_button, self.profile_button)
+            self.setTabOrder(self.profile_button, self.logout_button)
+            self.theme_combo.setFocus()
+            print("[DEBUG] MainMenu.__init__ terminé sans erreur")
+        except Exception as e:
+            print(f"[ERROR] Exception dans MainMenu.__init__ : {e}")
+            raise
+    def return_to_login(self) -> None:
+        self.window().stack.setCurrentWidget(self.window().login_screen)
+    def change_profile(self):
+        self.window().stack.setCurrentWidget(self.window().login_screen)
+    def keyPressEvent(self, event):
+        key = event.key()
+        if key == 78:  # N
+            self.play_button.click()
+        elif key == 68:  # D
+            self.deck_button.click()
+        elif key == 66:  # B
+            self.shop_button.click()
+        elif key == 67:  # C
+            self.collection_button.click()
+        elif key == 82:  # R
+            self.logout_button.click()
+        elif key == 16777216:  # Qt.Key_Escape
+            self.logout_button.click()
+        elif key == 16777264:  # Qt.Key_F1
+            if self.parent() and hasattr(self.parent(), 'show_help_popup'):
+                self.parent().show_help_popup()
+        else:
+            super().keyPressEvent(event)
+    def set_daltonian_mode(self, daltonian: bool):
+        # À compléter : appliquer le mode daltonien aux widgets si besoin
+        pass
+    def get_current_theme(self):
+        return self.current_theme
+    def set_current_theme(self, theme):
+        self.current_theme = theme
+        if theme == 'DARK':
+            ThemeManager.apply(ThemeManager.DARK)
+            self.theme_combo.setText("Thème : Sombre")
+        elif theme == 'LIGHT':
+            ThemeManager.apply(ThemeManager.LIGHT)
+            self.theme_combo.setText("Thème : Clair")
+        else:
+            ThemeManager.apply(ThemeManager.CONTRAST)
+            self.theme_combo.setText("Thème : Contraste élevé")
+    def toggle_theme(self):
+        if self.current_theme == 'DARK':
+            self.set_current_theme('LIGHT')
+        elif self.current_theme == 'LIGHT':
+            self.set_current_theme('CONTRAST')
+        else:
+            self.set_current_theme('DARK')
+        # Propagate to parent/main window if possible
+        if self.parent() and hasattr(self.parent(), 'set_global_theme'):
+            self.parent().set_global_theme(self.current_theme) 
+login_screen.py  |  CardGame2/screens/login_screen.py
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QComboBox
+from CardGame2.data_manager import DataManager
+from typing import Optional
+from CardGame2.ui.components import StyledButton, LoadingPopup, HelpDialog
+from PyQt5.QtGui import QKeyEvent, QKeySequence
+from PyQt5.QtWidgets import QDialog
+from PyQt5.QtCore import Qt
+
+data_manager = DataManager()
+
+class LoginScreen(QWidget):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        layout = QVBoxLayout()
+        self.label = QLabel("Entrez votre nom de joueur :")
+        self.profile_combo = QComboBox()
+        self.profile_combo.addItems(data_manager.get_all_player_names() if hasattr(data_manager, 'get_all_player_names') else [])
+        self.profile_combo.currentTextChanged.connect(self.fill_input_from_combo)
+        self.input = QLineEdit()
+        self.button = StyledButton("Se connecter")
+        self.button.clicked.connect(self.login)
+        self.create_button = StyledButton("Créer un nouveau profil")
+        self.create_button.clicked.connect(self.create_profile)
+        self.label.setToolTip("Entrez votre nom de joueur ou sélectionnez un profil existant.")
+        self.profile_combo.setToolTip("Liste des profils existants. Sélectionnez-en un pour pré-remplir le champ.")
+        self.input.setToolTip("Saisissez ici votre nom de joueur.")
+        self.button.setToolTip("Se connecter avec le nom indiqué")
+        self.create_button.setToolTip("Créer un nouveau profil avec le nom indiqué")
+        layout.addWidget(self.label)
+        layout.addWidget(self.profile_combo)
+        layout.addWidget(self.input)
+        layout.addWidget(self.button)
+        layout.addWidget(self.create_button)
+        self.setLayout(layout)
+        self.setTabOrder(self.profile_combo, self.input)
+        self.setTabOrder(self.input, self.button)
+        self.setTabOrder(self.button, self.create_button)
+        self.profile_combo.setFocus()
+
+    def fill_input_from_combo(self, text):
+        self.input.setText(text)
+
+    def login(self) -> None:
+        self.loading_popup = LoadingPopup("Connexion...", self)
+        self.loading_popup.show()
+        try:
+            name = self.input.text().strip()
+            if name:
+                data_manager.set_player_name(name)
+                main_window = self.parent().parent()
+                if hasattr(main_window, 'go_to_menu'):
+                    try:
+                        main_window.go_to_menu(name)
+                    except Exception as nav_exc:
+                        QMessageBox.critical(self, "Erreur navigation", f"Exception lors de la navigation : {nav_exc}")
+                else:
+                    QMessageBox.critical(self, "Erreur technique", "Impossible de naviguer vers le menu principal : MainWindow non trouvé ou méthode manquante.")
+            else:
+                QMessageBox.warning(self, "Erreur", "Veuillez entrer un nom de joueur.")
+        except Exception as e:
+            QMessageBox.critical(self, "Exception", f"Erreur inattendue : {e}")
+        finally:
+            self.loading_popup.close()
+
+    def create_profile(self) -> None:
+        self.loading_popup = LoadingPopup("Création du profil...", self)
+        self.loading_popup.show()
+        try:
+            name = self.input.text().strip()
+            if not name:
+                QMessageBox.warning(self, "Erreur", "Veuillez entrer un nom de joueur.")
+                return
+            existing = data_manager.get_all_player_names() if hasattr(data_manager, 'get_all_player_names') else []
+            if name in existing:
+                QMessageBox.warning(self, "Erreur", "Ce nom de joueur existe déjà.")
+                return
+            data_manager.set_player_name(name)
+            data_manager.reset_player_data(name) if hasattr(data_manager, 'reset_player_data') else None
+            self.parent().parent().go_to_menu(name)
+        finally:
+            self.loading_popup.close()
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            if self.parent() and hasattr(self.parent(), 'stack') and hasattr(self.parent().parent(), 'main_menu'):
+                self.parent().parent().stack.setCurrentWidget(self.parent().parent().main_menu)
+            event.accept()
+            return
+        elif event.key() == Qt.Key_F1:
+            html_content = """
+            <b>Raccourcis clavier :</b><br>
+            <ul>
+            <li><b>Échap</b> : Retour à l'écran précédent</li>
+            <li><b>F1</b> : Afficher cette aide</li>
+            <li><b>Tab</b> : Naviguer entre les éléments</li>
+            </ul>
+            <b>Conseils :</b><br>
+            - Sélectionnez un profil existant ou saisissez un nouveau nom.<br>
+            - Cliquez sur 'Se connecter' ou appuyez sur Entrée pour valider.<br>
+            - Utilisez 'Créer un nouveau profil' pour démarrer une nouvelle partie.<br>
+            """
+            dlg = HelpDialog('Aide - Connexion', html_content, self)
+            dlg.exec_()
+            event.accept()
+            return
+        super().keyPressEvent(event) 
+collection_menu.py  |  CardGame2/screens/collection_menu.py
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QListWidget, QPushButton, QMessageBox, QListWidgetItem, QLineEdit, QHBoxLayout, QComboBox, QDialog
+from CardGame2.data_manager import DataManager
+from CardGame2.sets.base_set import get_base_set
+from PyQt5.QtGui import QColor, QBrush, QKeyEvent, QKeySequence
+from typing import Optional
+from CardGame2.ui.components import StyledButton, StatsPanel, CardWidget, LoadingPopup, HelpDialog
+from PyQt5.QtCore import QPropertyAnimation
+from PyQt5.QtCore import Qt
+from CardGame2.ui.resources import UI_TEXTS
+
+data_manager = DataManager()
+
+class CollectionMenu(QWidget):
+    def __init__(self, player_name: str, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        layout = QVBoxLayout()
+        self.label = QLabel("Collection de cartes :")
+        self.label.setToolTip(UI_TEXTS['collection_label'])
+        # Barre de recherche et tri
+        search_sort_layout = QHBoxLayout()
+        self.search_bar = QLineEdit()
+        self.search_bar.setPlaceholderText("Rechercher une carte...")
+        self.search_bar.textChanged.connect(self.refresh_collection)
+        self.search_bar.setToolTip(UI_TEXTS['search_bar'])
+        self.sort_combo = QComboBox()
+        self.sort_combo.addItems(["Nom", "Rareté", "Coût"])
+        self.sort_combo.currentIndexChanged.connect(self.refresh_collection)
+        self.sort_combo.setToolTip(UI_TEXTS['sort_combo'])
+        self.sort_all_button = StyledButton("Tout trier")
+        self.sort_all_button.setToolTip(UI_TEXTS['sort_all_button'])
+        self.sort_all_button.clicked.connect(self.show_sort_menu)
+        search_sort_layout.addWidget(self.search_bar)
+        search_sort_layout.addWidget(self.sort_combo)
+        search_sort_layout.addWidget(self.sort_all_button)
+        self.cards_list = QListWidget()
+        self.cards_list.setToolTip(UI_TEXTS['cards_list'])
+        self.back_button = StyledButton("Retour")
+        self.back_button.setToolTip(UI_TEXTS['collection_back_button'])
+        self.stats_panel = StatsPanel("Détails de la carte", {"-": "-"})
+        self.stats_panel.setToolTip(UI_TEXTS['collection_stats_panel'])
+        self.card_widget = CardWidget("-", "-", "-", 0)
+        self.card_widget.setToolTip(UI_TEXTS['collection_card_widget'])
+        layout.addWidget(self.label)
+        layout.addLayout(search_sort_layout)
+        layout.addWidget(self.cards_list)
+        layout.addWidget(self.stats_panel)
+        layout.addWidget(self.card_widget)
+        layout.addWidget(self.back_button)
+        self.setLayout(layout)
+        self.back_button.clicked.connect(self.return_to_main)
+        self.cards_list.currentRowChanged.connect(self.update_stats_panel)
+        self.base_cards = get_base_set()
+        self.refresh_collection()
+        self.setTabOrder(self.search_bar, self.sort_combo)
+        self.setTabOrder(self.sort_combo, self.sort_all_button)
+        self.setTabOrder(self.sort_all_button, self.cards_list)
+        self.setTabOrder(self.cards_list, self.back_button)
+        self.search_bar.setFocus()
+    def refresh_collection(self) -> None:
+        self.loading_popup = LoadingPopup("Chargement de la collection...", self)
+        self.loading_popup.show()
+        try:
+            self.cards_list.clear()
+            collection = data_manager.get_collection()
+            # Filtrage
+            query = self.search_bar.text().lower() if hasattr(self, 'search_bar') else ''
+            cards = self.base_cards
+            if query:
+                cards = [c for c in cards if query in c.name.lower()]
+            # Tri
+            if hasattr(self, 'sort_combo'):
+                sort_mode = self.sort_combo.currentText()
+                if sort_mode == "Nom":
+                    cards = sorted(cards, key=lambda c: c.name)
+                elif sort_mode == "Rareté":
+                    cards = sorted(cards, key=lambda c: c.rarity.value)
+                elif sort_mode == "Coût":
+                    cards = sorted(cards, key=lambda c: getattr(c, 'cost', 0))
+            for c in cards:
+                count = collection.get(c.name, 0)
+                item = QListWidgetItem(f"{c.name} ({c.rarity.name})  x{count}")
+                if count == 0:
+                    item.setForeground(QBrush(QColor('gray')))
+                self.cards_list.addItem(item)
+            self.update_stats_panel()
+        finally:
+            self.loading_popup.close()
+    def update_stats_panel(self) -> None:
+        idx = self.cards_list.currentRow()
+        if 0 <= idx < len(self.base_cards):
+            card = self.base_cards[idx]
+            stats = self.card_stats(card)
+            self.stats_panel.set_stats(stats)
+            # CardWidget
+            self.card_widget.setParent(None)
+            self.card_widget = CardWidget(card.name, card.card_type.name, card.rarity.name, getattr(card, 'cost', 0), getattr(card, 'attack', None), getattr(card, 'health', None), getattr(card, 'description', ''))
+            self.layout().insertWidget(3, self.card_widget)
+            # Animation d'apparition
+            self.card_widget.setWindowOpacity(0.0)
+            anim = QPropertyAnimation(self.card_widget, b"windowOpacity")
+            anim.setDuration(300)
+            anim.setStartValue(0.0)
+            anim.setEndValue(1.0)
+            anim.start()
+            self._last_anim = anim
+        else:
+            self.stats_panel.set_stats({"-": "-"})
+            self.card_widget.setParent(None)
+            self.card_widget = CardWidget("-", "-", "-", 0)
+            self.layout().insertWidget(3, self.card_widget)
+    def card_stats(self, card) -> dict:
+        d = {"Nom": card.name, "Type": card.card_type.name, "Rareté": card.rarity.name, "Coût": getattr(card, 'cost', '-')}
+        if hasattr(card, 'attack') and hasattr(card, 'health'):
+            d["ATK"] = getattr(card, 'attack', '-')
+            d["PV"] = getattr(card, 'health', '-')
+        if hasattr(card, 'description') and card.description:
+            d["Description"] = card.description
+        return d
+    def return_to_main(self) -> None:
+        self.parent().parent().go_to_menu(self.parent().parent().player_name)
+    def set_daltonian_mode(self, daltonian: bool):
+        if hasattr(self, 'card_widget') and self.card_widget:
+            self.card_widget.set_aura(True, daltonian_mode=daltonian)
+    def show_sort_menu(self):
+        from PyQt5.QtWidgets import QMenu
+        menu = QMenu(self)
+        menu.addAction("Nom", lambda: self.sort_collection("Nom"))
+        menu.addAction("Rareté", lambda: self.sort_collection("Rareté"))
+        menu.addAction("Coût", lambda: self.sort_collection("Coût"))
+        menu.addAction("Nombre possédé", lambda: self.sort_collection("Possédé"))
+        menu.exec_(self.sort_all_button.mapToGlobal(self.sort_all_button.rect().bottomLeft()))
+    def sort_collection(self, mode):
+        self.loading_popup = LoadingPopup("Tri de la collection...", self)
+        self.loading_popup.show()
+        try:
+            self.sort_combo.setCurrentIndex({"Nom": 0, "Rareté": 1, "Coût": 2}.get(mode, 0))
+            if mode == "Possédé":
+                collection = data_manager.get_collection()
+                cards = self.base_cards
+                cards = sorted(cards, key=lambda c: -collection.get(c.name, 0))
+                self.cards_list.clear()
+                for c in cards:
+                    count = collection.get(c.name, 0)
+                    item = QListWidgetItem(f"{c.name} ({c.rarity.name})  x{count}")
+                    if count == 0:
+                        item.setForeground(QBrush(QColor('gray')))
+                    self.cards_list.addItem(item)
+                self.update_stats_panel()
+        finally:
+            self.loading_popup.close()
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.return_to_main()
+            event.accept()
+            return
+        elif event.key() == Qt.Key_F1:
+            html_content = """
+            <b>Raccourcis clavier :</b><br>
+            <ul>
+            <li><b>Échap</b> : Retour au menu principal</li>
+            <li><b>F1</b> : Afficher cette aide</li>
+            <li><b>Tab</b> : Naviguer entre les éléments</li>
+            </ul>
+            <b>Conseils :</b><br>
+            - Utilisez la barre de recherche pour filtrer les cartes.<br>
+            - Utilisez les tris pour organiser votre collection.<br>
+            - Cliquez sur une carte pour voir ses détails.<br>
+            """
+            dlg = HelpDialog('Aide - Collection', html_content, self)
+            dlg.exec_()
+            event.accept()
+            return
+        super().keyPressEvent(event) 
+__init__.py  |  CardGame2/screens/__init__.py
+
+# --- ui ---
+resources.py  |  CardGame2/ui/resources.py
+# resources.py
+# Centralisation des textes de l'UI pour internationalisation
+
+UI_TEXTS = {
+    'daltonian_button': "Active le mode daltonien pour de meilleures couleurs d'accessibilité",
+    'invert_boards_button': "Inverse l'affichage des boards joueur/IA pour l'accessibilité",
+    'toggle_hp_button': "Affiche ou masque les barres de vie des unités et héros",
+    'hero1_panel': "Statistiques détaillées de votre héros",
+    'hero2_panel': "Statistiques détaillées du héros IA",
+    'activate_hero_button': "Active le pouvoir spécial de votre héros (coût en mana indiqué)",
+    'mana_label': "Votre mana disponible pour jouer des cartes ou activer des pouvoirs",
+    'player_board': "Votre board : faites glisser ou cliquez sur vos unités pour attaquer",
+    'ia_board_widget': "Board de l'IA : ciblez ces unités pour attaquer",
+    'pv1_label': "Points de vie restants de votre héros",
+    'pv2_label': "Points de vie restants du héros IA",
+    'toggle_log_button': "Affiche ou masque le log du combat",
+    'copy_log_button': "Copie l'intégralité du log dans le presse-papiers",
+    'export_log_button': "Exporte le log du combat dans un fichier texte",
+    'log': "Historique détaillé des actions du combat",
+    'next_button': "Passer au tour suivant (raccourci : Entrée)",
+    'forfeit_button': "Abandonner la partie et retourner au menu",
+    'timer_label': "Temps restant pour jouer ce tour",
+    # MainMenu
+    'theme_combo': "Changer le thème (clair, sombre, contraste élevé)",
+    'play_button': "Jouer (Raccourci : N)",
+    'deck_button': "Decks (Raccourci : D)",
+    'shop_button': "Boutique (Raccourci : B)",
+    'collection_button': "Collection (Raccourci : C)",
+    'profile_button': "Changer de joueur",
+    'logout_button': "Déconnexion (Raccourci : R)",
+    # DeckMenu
+    'deck_selector': "Sélectionnez le slot de deck à éditer",
+    'tabs': "Naviguez entre les onglets Héros, Unités et Cartes",
+    'deck_list': "Liste des cartes actuellement dans le deck. Cliquez pour retirer.",
+    'hero_preview': "Aperçu du héros sélectionné",
+    'hero_list': "Liste des héros disponibles. Sélectionnez-en un pour l'ajouter au deck.",
+    'choose_hero_button': "Ajoute le héros sélectionné au deck",
+    'remove_hero_button': "Retire le héros du deck",
+    'duplicate_button': "Dupliquer ce deck",
+    'save_button': "Valider le deck",
+    'back_button': "Retour au menu principal",
+    # ShopMenu
+    'shop_label': "Bienvenue dans la boutique. Achetez des boosters pour agrandir votre collection.",
+    'unit_button': "Achetez un booster gratuit et obtenez de nouvelles cartes",
+    'pack_button': "Achetez un pack de 5 boosters gratuits pour plus de cartes",
+    'currency_label': "Votre monnaie actuelle pour les achats en boutique",
+    'shop_stats_panel': "Détails de la dernière carte obtenue",
+    'shop_card_widget': "Aperçu visuel de la dernière carte obtenue",
+    'buy_button': "Acheter un booster pour 100 pièces",
+    'shop_back_button': "Retour au menu principal",
+    # PlayMenu
+    'play_label': "Choisissez un mode de jeu.",
+    'solo_button': "Lancez une partie solo contre l'IA",
+    'multi_button': "Le mode multijoueur sera disponible prochainement",
+    'deck_label': "Sélectionnez le deck à utiliser pour la partie",
+    'deck_combo': "Choisissez un de vos decks pour jouer",
+    'deck_cards_list': "Liste des cartes du deck sélectionné",
+    'deck_summary_panel': "Résumé des statistiques du deck sélectionné",
+    'deck_preview_panel': "Aperçu visuel du deck sélectionné",
+    'reset_history_button': "Efface l'historique des parties jouées",
+    'history_table': "Historique de vos parties précédentes",
+    'play_play_button': "Jouer !",
+    'play_back_button': "Retour",
+    # CollectionMenu
+    'collection_label': "Votre collection de cartes. Utilisez la barre de recherche ou les tris pour filtrer.",
+    'search_bar': "Tapez pour rechercher une carte par nom",
+    'sort_combo': "Choisissez un critère de tri : nom, rareté, coût",
+    'sort_all_button': "Trier la collection par nom, rareté, coût ou nombre d'exemplaires",
+    'cards_list': "Liste de toutes vos cartes. Sélectionnez-en une pour voir ses détails.",
+    'collection_back_button': "Retour au menu principal",
+    'collection_stats_panel': "Statistiques détaillées de la carte sélectionnée",
+    'collection_card_widget': "Aperçu visuel de la carte sélectionnée",
+} 
+style_constants.py  |  CardGame2/ui/style_constants.py
+# style_constants.py
+# Centralisation des styles pour toute l'UI
+
+PLAY_BTN_STYLE = "background: #1976d2; color: #fff; font-weight: bold; font-size: 16px; padding: 10px 20px;"
+BACK_BTN_STYLE = "background: #e67e22; color: #fff; font-weight: bold; font-size: 15px; margin-top: 10px;"
+DUPLICATE_BTN_STYLE = "background: #1976d2; color: #fff; font-weight: bold; font-size: 15px; margin-top: 10px;"
+SAVE_BTN_STYLE = "background: #27ae60; color: #fff; font-weight: bold; font-size: 16px; padding: 10px 20px;"
+BUY_BTN_STYLE = "background: #1976d2; color: #fff; font-weight: bold; font-size: 16px; padding: 10px 20px;"
+SUMMARY_LABEL_STYLE = "color: #ffae00; font-size: 15px; margin-top: 10px;"
+TAB_STYLESHEET = (
+    "QTabBar::tab { background: #181a20; color: #f8f8f2; padding: 8px 20px; font-size: 15px; } "
+    "QTabBar::tab:selected { background: #3a7afe; color: #fff; }"
+)
+LIST_STYLESHEET = "background: #181a20; color: #f8f8f2; font-size: 15px;"
+PREVIEW_STYLESHEET = "background: #23272e; color: #f8f8f2;" 
+components.py  |  CardGame2/ui/components.py
+from PyQt5.QtWidgets import QPushButton, QWidget, QVBoxLayout, QLabel, QFrame, QDialog, QHBoxLayout, QSpacerItem, QSizePolicy, QGraphicsDropShadowEffect, QProgressBar
+from PyQt5.QtCore import QSize, QPropertyAnimation, Qt, QTimer, QEasingCurve, QPoint
+from PyQt5.QtGui import QPixmap, QColor, QPalette
+from typing import Optional
+from PyQt5 import QtCore
+from PyQt5.QtMultimedia import QSoundEffect
+import os
+
+class StyledButton(QPushButton):
+    def __init__(self, text: str, parent: Optional[QWidget] = None) -> None:
+        super().__init__(text, parent)
+        self.setMinimumHeight(40)
+        self.setStyleSheet("""
+            QPushButton {
+                font-weight: bold;
+                font-size: 16px;
+                padding: 8px 16px;
+                border-radius: 8px;
+                background: #1976d2;
+                color: #fff;
+                border: 2px solid #1976d2;
+                transition: box-shadow 0.2s, background 0.2s;
+            }
+            QPushButton:hover {
+                background: #2196f3;
+                box-shadow: 0 0 16px 4px #1976d2;
+                border: 2px solid #00e676;
+            }
+            QPushButton:focus {
+                background: #e3f2fd;
+                color: #1976d2;
+                border: 3px solid #ffae00;
+                box-shadow: 0 0 0 4px #ffea00, 0 0 24px 6px #00e676;
+                outline: none;
+            }
+        """)
+        self.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
+
+    def enterEvent(self, event):
+        self.setStyleSheet(self.styleSheet() + "\nbackground-color: #2196f3; box-shadow: 0 0 16px 4px #1976d2; border: 2px solid #00e676;")
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        base_style = self.styleSheet().split('\n')[0]
+        self.setStyleSheet(base_style)
+        super().leaveEvent(event)
+
+    def focusInEvent(self, event):
+        self.setStyleSheet(self.styleSheet() + "\nbackground-color: #e3f2fd; color: #1976d2; border: 2px solid #00e676; box-shadow: 0 0 24px 6px #00e676;")
+        super().focusInEvent(event)
+
+    def focusOutEvent(self, event):
+        base_style = self.styleSheet().split('\n')[0]
+        self.setStyleSheet(base_style)
+        super().focusOutEvent(event)
+
+def make_styled_button(
+    text: str,
+    style: str = "",
+    tooltip: str = "",
+    on_click=None,
+    checkable: bool = False,
+    checked: bool = False,
+    parent=None
+) -> StyledButton:
+    btn = StyledButton(text, parent=parent)
+    if style:
+        btn.setStyleSheet(style)
+    if tooltip:
+        btn.setToolTip(tooltip)
+    if on_click:
+        btn.clicked.connect(on_click)
+    btn.setCheckable(checkable)
+    if checkable:
+        btn.setChecked(checked)
+    return btn
+
+class StatsPanel(QWidget):
+    def __init__(self, title: str, stats: dict, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.title = title
+        self._layout = QVBoxLayout()
+        self.title_label = QLabel(f"<b>{title}</b>")
+        self._layout.addWidget(self.title_label)
+        self.stat_labels = []
+        for key, value in stats.items():
+            lbl = QLabel(f"{key} : {value}")
+            self._layout.addWidget(lbl)
+            self.stat_labels.append(lbl)
+        self.setLayout(self._layout)
+        self.setToolTip(self._make_tooltip(stats))
+
+    def set_stats(self, stats: dict):
+        # Supprime les anciens labels de stats
+        for lbl in self.stat_labels:
+            self._layout.removeWidget(lbl)
+            lbl.deleteLater()
+        self.stat_labels = []
+        # Ajoute les nouveaux labels
+        for key, value in stats.items():
+            lbl = QLabel(f"{key} : {value}")
+            self._layout.addWidget(lbl)
+            self.stat_labels.append(lbl)
+        self.setToolTip(self._make_tooltip(stats))
+
+    def _make_tooltip(self, stats: dict) -> str:
+        if not stats or list(stats.keys()) == ['-']:
+            return "Aucune statistique disponible."
+        return "\n".join(f"{k} : {v}" for k, v in stats.items())
+
+class CardWidget(QFrame):
+    clicked = QtCore.pyqtSignal()
+
+    def __init__(self, name: str, card_type: str, rarity: str, cost: int, attack: Optional[int] = None, health: Optional[int] = None, description: str = "", illustration: Optional[QPixmap] = None, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setFrameShape(QFrame.Box)
+        self.setLineWidth(2)
+        self.setFixedSize(180, 260)
+        self.setStyleSheet("background-color: #f8f8f2; border-radius: 12px;")
+        layout = QVBoxLayout()
+        # Illustration fictive
+        self.illu_label = QLabel()
+        self.illu_label.setFixedSize(160, 80)
+        if illustration:
+            self.illu_label.setPixmap(illustration.scaled(160, 80, QtCore.Qt.AspectRatioMode.KeepAspectRatio, QtCore.Qt.TransformationMode.SmoothTransformation))
+        else:
+            pix = QPixmap(160, 80)
+            pix.fill(QColor('#bdbdbd'))
+            self.illu_label.setPixmap(pix)
+        layout.addWidget(self.illu_label, alignment=QtCore.Qt.AlignmentFlag.AlignCenter)
+        # Nom
+        self.name_label = QLabel(f"<b>{name}</b>")
+        self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.name_label)
+        # Type, rareté, coût
+        self.info_label = QLabel(f"{card_type} | {rarity} | Coût: {cost}")
+        self.info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.info_label)
+        # ATK/PV si unité
+        if attack is not None and health is not None:
+            self.stats_label = QLabel(f"ATK: {attack}  PV: {health}")
+            self.stats_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(self.stats_label)
+        # Description
+        if description:
+            self.desc_label = QLabel(f"<i>{description}</i>")
+            self.desc_label.setWordWrap(True)
+            layout.addWidget(self.desc_label)
+        self.setLayout(layout)
+        # Animation d'apparition (zoom)
+        self._appear_anim = QPropertyAnimation(self, b"geometry")
+        self._appear_anim.setDuration(320)
+        self._appear_anim.setEasingCurve(QEasingCurve.OutBack)
+        self._appear_anim.setStartValue(self.geometry().adjusted(self.width()//2, self.height()//2, -self.width()//2, -self.height()//2))
+        self._appear_anim.setEndValue(self.geometry())
+        def start_anim():
+            self._appear_anim.start()
+        QTimer.singleShot(10, start_anim)
+        # Animation de survol
+        self._hover_anim = QPropertyAnimation(self, b"windowOpacity")
+        self.setMouseTracking(True)
+        # Glow effect
+        self._glow_effect = None
+        self._glow_enabled = False
+        self.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
+        self._focus_anim = QPropertyAnimation(self, b"styleSheet")
+        self._update_tooltip(name, card_type, rarity, cost, attack, health, description)
+
+    def set_glow(self, enabled: bool, color: str = '#00e676'):
+        if enabled and not self._glow_enabled:
+            effect = QGraphicsDropShadowEffect(self)
+            effect.setBlurRadius(32)
+            effect.setColor(QColor(color))
+            effect.setOffset(0, 0)
+            self.setGraphicsEffect(effect)
+            self._glow_effect = effect
+            self._glow_enabled = True
+        elif not enabled and self._glow_enabled:
+            self.setGraphicsEffect(None)
+            self._glow_effect = None
+            self._glow_enabled = False
+
+    def enterEvent(self, event):
+        self._hover_anim.stop()
+        self._hover_anim.setDuration(150)
+        self._hover_anim.setStartValue(1.0)
+        self._hover_anim.setEndValue(0.85)
+        self._hover_anim.start()
+        self.set_glow(True, color="#1976d2")
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self._hover_anim.stop()
+        self._hover_anim.setDuration(150)
+        self._hover_anim.setStartValue(self.windowOpacity())
+        self._hover_anim.setEndValue(1.0)
+        self._hover_anim.start()
+        self.set_glow(False)
+        super().leaveEvent(event)
+
+    def shake(self):
+        """Anime une secousse horizontale rapide (attaque)."""
+        anim = QPropertyAnimation(self, b"pos")
+        anim.setDuration(180)
+        anim.setKeyValueAt(0, self.pos())
+        anim.setKeyValueAt(0.2, self.pos() + QPoint(-10, 0))
+        anim.setKeyValueAt(0.5, self.pos() + QPoint(10, 0))
+        anim.setKeyValueAt(0.8, self.pos() + QPoint(-10, 0))
+        anim.setKeyValueAt(1, self.pos())
+        anim.setEasingCurve(QEasingCurve.InOutCubic)
+        anim.start()
+
+    def set_aura(self, enabled: bool, color: str = '#ffd600', daltonian_mode: bool = False):
+        """Affiche une aura colorée autour de la carte (effet spécial/statut)."""
+        if enabled:
+            effect = QGraphicsDropShadowEffect(self)
+            effect.setBlurRadius(64)
+            # Si mode daltonien, on modifie la couleur pour plus de contraste
+            if daltonian_mode:
+                # On force la couleur à un contraste élevé (ex: orange ou turquoise)
+                effect.setColor(QColor('#ff9800'))
+            else:
+                effect.setColor(QColor(color))
+            effect.setOffset(0, 0)
+            self.setGraphicsEffect(effect)
+        else:
+            self.setGraphicsEffect(None)
+
+    def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.MouseButton.LeftButton:
+            self.clicked.emit()
+        super().mousePressEvent(event)
+
+    def set_effect_icons(self, effects: list):
+        """Affiche des icônes d'effets spéciaux en overlay en haut à droite, avec la durée si présente."""
+        # Supprime les anciens overlays
+        if hasattr(self, '_effect_icons'):
+            for icon in self._effect_icons:
+                icon.setParent(None)
+        self._effect_icons = []
+        icon_map = {
+            'boost': ('⚡', 'Boost : +ATK temporaire'),
+            'poison': ('☠️', 'Poison : perd des PV chaque tour'),
+            'shield': ('🛡️', 'Bouclier : réduit les dégâts'),
+            'freeze': ('❄️', 'Gel : ne peut pas attaquer'),
+            'burn': ('🔥', 'Brûlure : perd 1 PV par tour'),
+        }
+        x_offset = self.width() - 32
+        y_offset = 4
+        for i, eff in enumerate(effects):
+            eff_type = eff['type'] if isinstance(eff, dict) else eff
+            duration = eff.get('duration', None) if isinstance(eff, dict) else None
+            if eff_type in icon_map:
+                icon, tooltip = icon_map[eff_type]
+                text = f"{icon}{duration}" if duration and duration > 1 else icon
+                lbl = QLabel(text, self)
+                lbl.setStyleSheet("font-size: 22px; background: transparent;")
+                lbl.setToolTip(tooltip + (f" (reste {duration} tours)" if duration else ""))
+                lbl.move(x_offset, y_offset + i*24)
+                lbl.show()
+                self._effect_icons.append(lbl)
+        # Aura spéciale pour brûlure
+        if any((isinstance(eff, dict) and eff.get('type') == 'burn') or eff == 'burn' for eff in effects):
+            self.set_aura(True, color='#ff5722')  # orange/rouge
+        else:
+            self.set_aura(False)
+
+    def flash(self):
+        """Anime un flash blanc rapide sur la carte (ex: expiration d'effet)."""
+        anim = QPropertyAnimation(self, b"windowOpacity")
+        anim.setDuration(220)
+        anim.setStartValue(1.0)
+        anim.setKeyValueAt(0.2, 0.2)
+        anim.setKeyValueAt(0.8, 0.2)
+        anim.setEndValue(1.0)
+        anim.start()
+
+    def play_sound(self, sound_name: str):
+        """Joue un son court selon l'événement (attaque, effet, etc.)."""
+        sound_map = {
+            'attack': 'attack.wav',
+            'heal': 'heal.wav',
+            'effect_expire': 'effect_expire.wav',
+            'victory': 'victory.wav',
+            'defeat': 'defeat.wav',
+        }
+        if sound_name in sound_map:
+            effect = QSoundEffect(self)
+            effect.setSource(QtCore.QUrl.fromLocalFile(os.path.join(os.path.dirname(__file__), 'sounds', sound_map[sound_name])))
+            effect.setVolume(0.7)
+            effect.play()
+
+    def heal_glow(self):
+        """Anime une lueur verte rapide sur la carte (soin)."""
+        effect = QGraphicsDropShadowEffect(self)
+        effect.setBlurRadius(48)
+        effect.setColor(QColor('#00e676'))
+        effect.setOffset(0, 0)
+        self.setGraphicsEffect(effect)
+        QTimer.singleShot(350, lambda: self.setGraphicsEffect(None))
+
+    def set_effects_tooltip(self, effects: list):
+        """Affiche un tooltip global listant tous les effets actifs sur la carte."""
+        if not effects:
+            self.setToolTip("")
+            return
+        lines = []
+        for eff in effects:
+            if isinstance(eff, dict):
+                t = eff.get('type', str(eff))
+                d = eff.get('duration', None)
+                if d:
+                    lines.append(f"{t} ({d} tours)")
+                else:
+                    lines.append(str(t))
+            else:
+                lines.append(str(eff))
+        self.setToolTip("Effets actifs :\n" + "\n".join(lines))
+
+    def focusInEvent(self, event):
+        self.set_glow(True, color="#00e676")
+        super().focusInEvent(event)
+
+    def focusOutEvent(self, event):
+        self.set_glow(False)
+        super().focusOutEvent(event)
+
+    def set_target_highlight(self, enabled: bool):
+        """Affiche une bordure animée rouge si la carte est la cible d'une attaque."""
+        if enabled:
+            self.setStyleSheet(self.styleSheet() + "\nborder: 3px solid #ff1744; box-shadow: 0 0 8px #ff1744;")
+        else:
+            base_style = self.styleSheet().split('\n')[0]
+            self.setStyleSheet(base_style)
+
+    def _update_tooltip(self, name, card_type, rarity, cost, attack, health, description):
+        tip = f"Nom : {name}\nType : {card_type}\nRareté : {rarity}\nCoût : {cost}"
+        if attack is not None and health is not None:
+            tip += f"\nATK : {attack}  PV : {health}"
+        if description:
+            tip += f"\nDescription : {description}"
+        self.setToolTip(tip)
+
+class DeckPreviewPanel(QWidget):
+    def __init__(self, deck: dict, base_cards: list, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        layout = QVBoxLayout()
+        # Héros
+        hero = deck.get("hero")
+        if hero:
+            layout.addWidget(QLabel("<b>Héros</b>"))
+            # Récupère les stats personnalisées si présentes
+            base_hp = hero.get("base_hp", 0)
+            base_attack = hero.get("base_attack", 0)
+            base_defense = hero.get("base_defense", 0)
+            hp_bonus = 0
+            atk_bonus = 0
+            def_bonus = 0
+            passives = []
+            if "customization" in hero:
+                custom = hero["customization"]
+                hp_bonus = custom.get("hp_level", 0) * 5
+                atk_bonus = custom.get("attack_level", 0) * 2
+                def_bonus = custom.get("defense_level", 0) * 2
+                passives = custom.get("passives", [])
+            total_hp = base_hp + hp_bonus
+            total_atk = base_attack + atk_bonus
+            total_def = base_defense + def_bonus
+            desc = f"PV: {total_hp}  ATK: {total_atk}  DEF: {total_def}"
+            if passives:
+                desc += "\nPassifs: " + ", ".join(passives)
+            layout.addWidget(CardWidget(hero["name"], "HÉROS", "-", 0, total_atk, total_hp, desc))
+        # Unités
+        units = deck.get("units", [])
+        if units:
+            layout.addWidget(QLabel("<b>Unités</b>"))
+            for u_name in units:
+                card = next((c for c in base_cards if c.name == u_name), None)
+                if card:
+                    layout.addWidget(CardWidget(card.name, "UNITÉ", getattr(card, 'rarity', '-'), getattr(card, 'cost', 0), getattr(card, 'attack', None), getattr(card, 'health', None), getattr(card, 'description', '')))
+        # Autres cartes
+        cards = deck.get("cards", [])
+        if cards:
+            layout.addWidget(QLabel(f"<b>Autres cartes</b> ({len(cards)})"))
+        self.setLayout(layout)
+
+class NotificationPopup(QDialog):
+    def __init__(self, message: str, duration: int = 2000, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowType.FramelessWindowHint | QtCore.Qt.WindowType.WindowStaysOnTopHint)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setModal(False)
+        layout = QHBoxLayout()
+        label = QLabel(message)
+        label.setStyleSheet("background: #23272e; color: #f8f8f2; border-radius: 8px; padding: 12px 24px; font-size: 16px;")
+        layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        layout.addWidget(label)
+        layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        self.setLayout(layout)
+        self.adjustSize()
+        QTimer.singleShot(duration, self.close)
+
+class HealthBarWidget(QWidget):
+    def __init__(self, current: int, maximum: int, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.bar = QProgressBar(self)
+        self.bar.setMinimum(0)
+        self.bar.setMaximum(maximum)
+        self.bar.setValue(current)
+        self.bar.setTextVisible(True)
+        self.bar.setFormat(f"PV : {current}/{maximum}")
+        self.bar.setStyleSheet("QProgressBar { border: 1px solid #222; border-radius: 6px; background: #eee; height: 16px; } QProgressBar::chunk { background: #43a047; border-radius: 6px; }")
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.bar)
+
+    def set_health(self, current: int, maximum: int):
+        self.bar.setMaximum(maximum)
+        self.bar.setValue(current)
+        self.bar.setFormat(f"PV : {current}/{maximum}")
+
+class LoadingPopup(QDialog):
+    def __init__(self, message: str = "Chargement...", parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowType.FramelessWindowHint | QtCore.Qt.WindowType.WindowStaysOnTopHint)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setModal(True)
+        layout = QHBoxLayout()
+        label = QLabel(message)
+        label.setStyleSheet("background: #23272e; color: #f8f8f2; border-radius: 8px; padding: 16px 32px; font-size: 18px;")
+        spinner = QLabel("⏳")
+        spinner.setStyleSheet("font-size: 28px; margin-right: 16px;")
+        layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        layout.addWidget(spinner)
+        layout.addWidget(label)
+        layout.addSpacerItem(QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        self.setLayout(layout)
+        self.adjustSize()
+
+class HelpDialog(QDialog):
+    def __init__(self, title: str, html_content: str, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.setModal(True)
+        layout = QVBoxLayout()
+        label = QLabel(html_content)
+        label.setWordWrap(True)
+        layout.addWidget(label)
+        close_btn = StyledButton("Fermer")
+        close_btn.clicked.connect(self.accept)
+        layout.addWidget(close_btn)
+        self.setLayout(layout)
+        self.setMinimumWidth(400) 
+theme_manager.py  |  CardGame2/ui/theme_manager.py
+from PyQt5.QtWidgets import QApplication
+
+class ThemeManager:
+    LIGHT = """
+        QWidget { background-color: #f8f8f2; color: #23272e; }
+        QPushButton, QComboBox, QListWidget, QLineEdit {
+            background-color: #e0e0e0; color: #23272e; border-radius: 8px;
+        }
+        QPushButton:hover { background-color: #bdbdbd; }
+    """
+    DARK = """
+        QWidget { background-color: #23272e; color: #f8f8f2; }
+        QPushButton, QComboBox, QListWidget, QLineEdit {
+            background-color: #44475a; color: #f8f8f2; border-radius: 8px;
+        }
+        QPushButton:hover { background-color: #6272a4; }
+    """
+    CONTRAST = """
+        QWidget { background-color: #000; color: #fff; }
+        QPushButton, QComboBox, QListWidget, QLineEdit {
+            background-color: #fff; color: #000; border-radius: 8px;
+        }
+        QPushButton:hover { background-color: #ff0; color: #000; }
+    """
+    @staticmethod
+    def apply(theme: str):
+        app = QApplication.instance()
+        if app and hasattr(app, 'setStyleSheet'):
+            app.setStyleSheet(theme)
+    @staticmethod
+    def set_accent_color(color: str):
+        app = QApplication.instance()
+        if app and hasattr(app, 'setStyleSheet') and hasattr(app, 'styleSheet'):
+            style = app.styleSheet()
+            style += f"\nQPushButton {{ background-color: {color}; }}\nQPushButton:hover {{ background-color: #222; color: {color}; }}"
+            app.setStyleSheet(style) 
+# --- models ---
+unit.py  |  CardGame2/models/unit.py
+from .card import Card
+from .types import CardType, Rarity
+from typing import Optional
+
+class Unit(Card):
+    def __init__(self, name: str, rarity: Rarity, cost: int, attack: int, health: int, effect=None, set_name=None, description=""):
+        super().__init__(name, CardType.UNIT, rarity, cost, effect, set_name, description)
+        self.attack = attack
+        self.health = health
+        self.max_health = health
+        self.status_effects = []  # ex: [{'type': 'boost', 'duration': 2}, ...]
+
+    def take_damage(self, amount: int):
+        self.health -= amount
+        if self.health < 0:
+            self.health = 0
+
+    def is_alive(self):
+        return self.health > 0
+
+    def apply_status_effect(self, effect_type: str, duration: Optional[int] = None):
+        if duration is not None:
+            self.status_effects.append({'type': effect_type, 'duration': duration})
+        else:
+            self.status_effects.append({'type': effect_type})
+
+    def __repr__(self):
+        return f"<Unit {self.name} ATK:{self.attack} HP:{self.health}/{self.max_health} ({self.rarity.name})>" 
+player.py  |  CardGame2/models/player.py
+from typing import List, Optional
+from .card import Card
+from .hero import Hero
+
+class Player:
+    def __init__(self, name: str, deck: Optional[List[Card]] = None, collection: Optional[List[Card]] = None, health: int = 20, hero: Optional[Hero] = None):
+        self.name = name
+        self.deck = deck or []
+        self.hand = []
+        self.collection = collection or []
+        self.health = health
+        self.max_health = health
+        self.discard_pile = []
+        self.board = []  # cartes en jeu
+        self.hero = hero
+        self.mana = 1  # Ajout du mana par défaut
+
+    @property
+    def is_alive(self) -> bool:
+        return self.health > 0
+
+    @property
+    def board_count(self) -> int:
+        return len(self.board)
+
+    @property
+    def hand_count(self) -> int:
+        return len(self.hand)
+
+    def draw(self, n: int = 1) -> None:
+        for _ in range(n):
+            if self.deck:
+                self.hand.append(self.deck.pop(0))
+
+    def play_card(self, card: Card, game, target=None) -> Optional[object]:
+        if card in self.hand and getattr(card, 'cost', 0) <= self.mana:
+            self.hand.remove(card)
+            self.mana -= getattr(card, 'cost', 0)
+            result = card.play(game, self, target)
+            self.board.append(card)
+            return result
+        return None
+
+    def take_damage(self, amount: int) -> None:
+        self.health -= amount
+        if self.health < 0:
+            self.health = 0
+
+    def gain_mana(self, amount: int = 1, max_mana: int = 15) -> None:
+        self.mana = min(self.mana + amount, max_mana)
+
+    def reset_mana(self, value: int = 1) -> None:
+        self.mana = value
+
+    def __repr__(self):
+        return f"<Player {self.name} HP:{self.health}/{self.max_health} Hand:{self.hand_count} Deck:{len(self.deck)} Board:{self.board_count}>"
+
+class AIPlayer(Player):
+    def __init__(self, name: str, deck: Optional[List[Card]] = None, collection: Optional[List[Card]] = None, health: int = 20, hero: Optional[Hero] = None):
+        super().__init__(name, deck, collection, health, hero)
+
+    def play_turn(self, game, battle):
+        self._play_spells(game, battle)
+        self._attack_with_units(battle)
+        self._finish_if_possible(battle)
+
+    def _play_spells(self, game, battle):
+        for card in list(self.hand):
+            if hasattr(card, 'card_type') and str(card.card_type) == 'CardType.SPELL' and getattr(card, 'cost', 0) <= self.mana:
+                target = None
+                if battle.opponent.board:
+                    target = min(battle.opponent.board, key=lambda u: getattr(u, 'health', 99))
+                self.play_card(card, game, target)
+
+    def _attack_with_units(self, battle):
+        for unit in list(self.board):
+            if battle.opponent.board:
+                target = min(battle.opponent.board, key=lambda u: getattr(u, 'health', 99))
+                battle.attack(unit, target)
+            else:
+                battle.opponent.take_damage(getattr(unit, 'attack', 0))
+
+    def _finish_if_possible(self, battle):
+        if battle.opponent.health <= 0:
+            battle.winner = self 
+hero.py  |  CardGame2/models/hero.py
+from enum import Enum
+
+class HeroPassive(Enum):
+    POISON = "Poison"
+    ENFLAMME = "Enflammé"
+    CHARISMATIQUE = "Charismatique"
+
+class HeroCustomization:
+    def __init__(self):
+        self.hp_level = 0
+        self.attack_level = 0
+        self.defense_level = 0
+        self.passives = []
+        self.total_cost = 0
+    def get_hp_bonus(self):
+        return self.hp_level * 5
+    def get_attack_bonus(self):
+        return self.attack_level * 2
+    def get_defense_bonus(self):
+        return self.defense_level * 2
+    def get_activation_cost(self):
+        return 3 + self.total_cost
+    def can_add_passive(self, passive: HeroPassive):
+        return self.total_cost + 3 <= 15
+    def add_passive(self, passive: HeroPassive):
+        if self.can_add_passive(passive) and passive not in self.passives:
+            self.passives.append(passive)
+            self.total_cost += 3
+            return True
+        return False
+    def remove_passive(self, passive: HeroPassive):
+        if passive in self.passives:
+            self.passives.remove(passive)
+            self.total_cost -= 3
+            return True
+        return False
+    def can_upgrade_stat(self, stat_type: str):
+        current_level = getattr(self, f"{stat_type}_level", 0)
+        if current_level >= 3:
+            return False
+        upgrade_cost = current_level + 1
+        return self.total_cost + upgrade_cost <= 15
+    def upgrade_stat(self, stat_type: str):
+        if self.can_upgrade_stat(stat_type):
+            current_level = getattr(self, f"{stat_type}_level", 0)
+            upgrade_cost = current_level + 1
+            setattr(self, f"{stat_type}_level", current_level + 1)
+            self.total_cost += upgrade_cost
+            return True
+        return False
+    def downgrade_stat(self, stat_type: str):
+        current_level = getattr(self, f"{stat_type}_level", 0)
+        if current_level > 0:
+            downgrade_cost = current_level
+            setattr(self, f"{stat_type}_level", current_level - 1)
+            self.total_cost -= downgrade_cost
+            return True
+        return False
+    def to_dict(self):
+        return {
+            'hp_level': self.hp_level,
+            'attack_level': self.attack_level,
+            'defense_level': self.defense_level,
+            'passives': [p.value for p in self.passives],
+            'total_cost': self.total_cost
+        }
+    @classmethod
+    def from_dict(cls, data: dict):
+        customization = cls()
+        customization.hp_level = data.get('hp_level', 0)
+        customization.attack_level = data.get('attack_level', 0)
+        customization.defense_level = data.get('defense_level', 0)
+        customization.passives = [HeroPassive(p) for p in data.get('passives', [])]
+        customization.total_cost = data.get('total_cost', 0)
+        return customization
+
+class Hero:
+    def __init__(self, name: str, base_hp: int, base_attack: int, base_defense: int):
+        self.name = name
+        self.base_hp = base_hp
+        self.base_attack = base_attack
+        self.base_defense = base_defense
+        self.customization = HeroCustomization()
+        self.is_active = False
+        self.is_tapped = False
+        self.ability_cooldown = 0
+        self.hero_ability = ""
+        self.ability_description = ""
+    def activate(self):
+        self.is_active = True
+    def deactivate(self):
+        self.is_active = False
+    def apply_customization(self):
+        self.max_hp = self.base_hp + self.customization.get_hp_bonus()
+        self.current_hp = self.max_hp
+        self.attack = self.base_attack + self.customization.get_attack_bonus()
+        self.defense = self.base_defense + self.customization.get_defense_bonus()
+    def get_activation_cost(self):
+        return self.customization.get_activation_cost()
+    def has_passive(self, passive: HeroPassive):
+        return passive in self.customization.passives
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'base_hp': self.base_hp,
+            'base_attack': self.base_attack,
+            'base_defense': self.base_defense,
+            'customization': self.customization.to_dict()
+        }
+    @classmethod
+    def from_dict(cls, data: dict):
+        hero = cls(
+            name=data['name'],
+            base_hp=data['base_hp'],
+            base_attack=data['base_attack'],
+            base_defense=data['base_defense']
+        )
+        if 'customization' in data:
+            hero.customization = HeroCustomization.from_dict(data['customization'])
+            hero.apply_customization()
+        return hero 
+card.py  |  CardGame2/models/card.py
+from .types import Rarity, CardType
+from typing import Optional, Callable
+
+class Card:
+    def __init__(self, name: str, card_type: CardType, rarity: Rarity, cost: int = 0, effect: Optional[Callable] = None, set_name: Optional[str] = None, description: str = ""):
+        self.name = name
+        self.card_type = card_type
+        self.rarity = rarity
+        self.cost = cost
+        self.effect = effect
+        self.set_name = set_name
+        self.description = description
+
+    def play(self, game, player, target=None):
+        if self.effect:
+            return self.effect(game, player, target)
+        return None
+
+    def __repr__(self):
+        return f"<Card {self.name} [{self.card_type.name}] ({self.rarity.name})>" 
+types.py  |  CardGame2/models/types.py
+from enum import Enum, auto
+
+class Rarity(Enum):
+    COMMON = auto()
+    UNCOMMON = auto()
+    RARE = auto()
+    MYTHIC = auto()
+    SPECIAL = auto()
+    BONUS = auto()
+
+class CardType(Enum):
+    UNIT = auto()
+    SPELL = auto()
+    EQUIPMENT = auto()
+    HERO = auto()
+    STATUS = auto()
+    LAND = auto()
+
+# Ajoutez d'autres types ou constantes si besoin 
+__init__.py  |  CardGame2/models/__init__.py
+
+# --- utils ---
+user_config.py  |  CardGame2/utils/user_config.py
+import os
+import json
+
+CONFIG_PATH = os.path.expanduser('~/.cardgame2_config.json')
+
+def save_user_config(config: dict):
+    try:
+        with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
+            json.dump(config, f)
+    except Exception as e:
+        print(f"Erreur lors de la sauvegarde de la config utilisateur : {e}")
+
+def load_user_config() -> dict:
+    if not os.path.exists(CONFIG_PATH):
+        return {}
+    try:
+        with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Erreur lors du chargement de la config utilisateur : {e}")
+        return {} 
+__init__.py  |  CardGame2/utils/__init__.py
+
+# --- sets ---
+base_set.py  |  CardGame2/sets/base_set.py
+from ..models.card import Card
+from ..models.unit import Unit
+from ..models.types import CardType, Rarity
+from typing import List
+
+def get_base_set() -> List[Card]:
+    cards = [
+        Unit("Soldat Vaillant", Rarity.COMMON, 1, 2, 2, description="Unité de base."),
+        Unit("Archer Agile", Rarity.UNCOMMON, 2, 3, 2, description="Peut attaquer à distance."),
+        Unit("Chevalier Légendaire", Rarity.RARE, 4, 5, 5, description="Unité puissante."),
+        Unit("Garde d'Élite", Rarity.UNCOMMON, 3, 4, 3, description="Unité défensive solide."),
+        Card("Boule de Feu", CardType.SPELL, Rarity.COMMON, 2, description="Inflige 3 dégâts à une cible."),
+        Card("Bouclier Magique", CardType.EQUIPMENT, Rarity.UNCOMMON, 2, description="Donne +2 PV à une unité."),
+        Card("Invocation du Dragon", CardType.SPELL, Rarity.MYTHIC, 6, description="Invoque un dragon 7/7."),
+        Card("Potion de Soin", CardType.SPELL, Rarity.COMMON, 1, description="Soigne 3 PV."),
+        Card("Épée Runique", CardType.EQUIPMENT, Rarity.RARE, 3, description="Donne +3 ATK à une unité."),
+        Card("Aura Mystique", CardType.SPELL, Rarity.SPECIAL, 5, description="Effet spécial mystérieux."),
+    ]
+    return cards 
+__init__.py  |  CardGame2/sets/__init__.py
+
+# --- boosters ---
+booster.py  |  CardGame2/boosters/booster.py
+import random
+from CardGame2.models.card import Card
+from CardGame2.models.types import CardType, Rarity
+from typing import List
+
+def generate_booster(card_pool: List[Card]) -> List[Card]:
+    units = [c for c in card_pool if c.card_type == CardType.UNIT]
+    spells_equip = [c for c in card_pool if c.card_type in (CardType.SPELL, CardType.EQUIPMENT)]
+    bonus = [c for c in card_pool if c.rarity in (Rarity.RARE, Rarity.MYTHIC, Rarity.SPECIAL, Rarity.BONUS)]
+    commons = [c for c in card_pool if c.rarity == Rarity.COMMON]
+    uncommons = [c for c in card_pool if c.rarity == Rarity.UNCOMMON]
+
+    booster = []
+    booster += random.sample(units, min(2, len(units)))
+    booster += random.sample(spells_equip, min(5, len(spells_equip)))
+    # Carte bonus : rareté supérieure si possible
+    if bonus:
+        booster.append(random.choice(bonus))
+    else:
+        # fallback : uncommon ou common
+        if uncommons:
+            booster.append(random.choice(uncommons))
+        else:
+            booster.append(random.choice(commons))
+    random.shuffle(booster)
+    return booster 
+__init__.py  |  CardGame2/boosters/__init__.py
+
+# --- combat ---
+battle.py  |  CardGame2/combat/battle.py
+from CardGame2.models.player import Player
+from typing import Optional
+from CardGame2.models.hero import HeroPassive
+import random
+
+class Battle:
+    def __init__(self, player1: Player, player2: Player):
+        self.player1: Player = player1
+        self.player2: Player = player2
+        self.turn: int = 0
+        self.active_player: Player = player1
+        self.opponent: Player = player2
+        self.winner: Player = None
+        self.forfeit: Optional[str] = None  # None, 'player1', 'player2'
+
+    def next_turn(self) -> None:
+        self.turn += 1
+        self.active_player, self.opponent = self.opponent, self.active_player
+        # Passif de héros : soin de 1 PV à toutes les unités alliées si CHARISMATIQUE
+        if hasattr(self.active_player, 'hero') and self.active_player.hero and hasattr(self.active_player.hero, 'has_passive'):
+            if self.active_player.hero.has_passive(HeroPassive.CHARISMATIQUE):
+                for unit in self.active_player.board:
+                    if hasattr(unit, 'health') and hasattr(unit, 'max_health'):
+                        unit.health = min(unit.health + 1, unit.max_health)
+        # Passif de héros : ENFLAMME applique brûlure à une unité adverse aléatoire
+        if hasattr(self.active_player, 'hero') and self.active_player.hero and hasattr(self.active_player.hero, 'has_passive'):
+            if self.active_player.hero.has_passive(HeroPassive.ENFLAMME):
+                candidates = [u for u in self.opponent.board if hasattr(u, 'status_effects')]
+                if candidates:
+                    target = random.choice(candidates)
+                    if hasattr(target, 'apply_status_effect'):
+                        target.apply_status_effect('burn', 2)
+        # Passif de héros : POISON applique poison à une unité adverse aléatoire
+        if hasattr(self.active_player, 'hero') and self.active_player.hero and hasattr(self.active_player.hero, 'has_passive'):
+            if self.active_player.hero.has_passive(HeroPassive.POISON):
+                candidates = [u for u in self.opponent.board if hasattr(u, 'status_effects')]
+                if candidates:
+                    target = random.choice(candidates)
+                    if hasattr(target, 'apply_status_effect'):
+                        target.apply_status_effect('poison', 2)
+        # Application des effets de statut (dont brûlure) sur toutes les unités du board
+        for unit in self.active_player.board:
+            expired_effects = []
+            for eff in unit.status_effects:
+                if isinstance(eff, dict) and eff.get('type') == 'burn':
+                    unit.take_damage(1)
+                    if 'duration' in eff:
+                        eff['duration'] -= 1
+                        if eff['duration'] <= 0:
+                            expired_effects.append(eff)
+            for eff in expired_effects:
+                unit.status_effects.remove(eff)
+                # TODO: Ajouter feedback log/animation/son ici
+        self.active_player.draw(1)
+        self.active_player.gain_mana()
+
+    def attack(self, attacker, defender) -> None:
+        defender.take_damage(getattr(attacker, 'attack', 0))
+        attacker.take_damage(getattr(defender, 'attack', 0))
+        if not defender.is_alive:
+            if defender in self.opponent.board:
+                self.opponent.board.remove(defender)
+        if not attacker.is_alive:
+            if attacker in self.active_player.board:
+                self.active_player.board.remove(attacker)
+
+    def check_victory(self) -> Player:
+        # 1. Terrain vide : si un joueur n'a plus d'unités, il perd. Égalité si les deux terrains sont vides.
+        if not self.player1.board and not self.player2.board:
+            self.winner = None  # Égalité
+            return self.winner
+        if not self.player1.board:
+            self.winner = self.player2
+            return self.winner
+        if not self.player2.board:
+            self.winner = self.player1
+            return self.winner
+        # 2. Héros tué
+        if not self.player1.is_alive or (hasattr(self.player1, 'hero') and self.player1.hero and getattr(self.player1.hero, 'current_hp', 1) <= 0):
+            self.winner = self.player2
+            return self.winner
+        if not self.player2.is_alive or (hasattr(self.player2, 'hero') and self.player2.hero and getattr(self.player2.hero, 'current_hp', 1) <= 0):
+            self.winner = self.player1
+            return self.winner
+        # 3. Abandon
+        if self.forfeit == 'player1':
+            self.winner = self.player2
+            return self.winner
+        if self.forfeit == 'player2':
+            self.winner = self.player1
+            return self.winner
+        # 4. 50ème tour
+        if self.turn >= 50:
+            self.winner = None  # Égalité
+            return self.winner
+        return self.winner
+
+    def forfeit_player(self, player: Player) -> None:
+        if player == self.player1:
+            self.forfeit = 'player1'
+        elif player == self.player2:
+            self.forfeit = 'player2'
+
+    def play_round(self) -> None:
+        self.next_turn()
+        self.check_victory() 
+__init__.py  |  CardGame2/combat/__init__.py
+
+# --- players ---
+__init__.py  |  CardGame2/players/__init__.py

@@ -1,0 +1,30 @@
+{
+  "progress": {
+    "centralisation_styles": 100,
+    "accessibilite": 70,
+    "ux_feedback": 60,
+    "modularite": 70,
+    "internationalisation": 50
+  },
+  "steps": [
+    "Centralisation des styles (100%) : styles factorisés dans ui/style_constants.py et utilisés partout.",
+    "Accessibilité avancée (70%) : tooltips et navigation clavier faits, labels accessibles en cours d'ajout.",
+    "UX & feedback utilisateur (60%) : popups/chargement faits, notifications/toasts et onboarding en cours.",
+    "Optimisation & modularité (70%) : widgets factorisés, extraction des composants récurrents en cours.",
+    "Internationalisation (50%) : textes séparés, centralisation et hooks de traduction en cours."
+  ],
+  "files_modified": [
+    "ui/style_constants.py",
+    "screens/deck_menu.py",
+    "screens/play_menu.py",
+    "screens/shop_menu.py"
+  ],
+  "todo": [
+    "Finir l'ajout des labels accessibles sur tous les widgets.",
+    "Finaliser l'intégration des notifications/toasts et de l'onboarding.",
+    "Extraire/factoriser d'autres widgets récurrents si besoin.",
+    "Centraliser tous les textes dans un module de ressources.",
+    "Préparer l'intégration de QTranslator pour la traduction."
+  ],
+  "timestamp": "2024-06-09T12:00:00Z"
+} 

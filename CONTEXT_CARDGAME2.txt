@@ -1,0 +1,142 @@
+# CONTEXTE CARDGAME2 (dernière mise à jour : 2025-06-27)
+
+## État final du projet (100 %)
+- **Toutes les familles élémentaires et mécaniques sont intégrées** (cartes, héros, effets, stats, descriptions).
+- **Effets avancés** (oblitération, bannissement, effacement de buffs, propagation, copie, explosion, etc.) activés dans le moteur de combat et l'UI.
+- **Filtrage par élément/famille** opérationnel dans tous les écrans (DeckMenu unités, DeckMenu cartes, Collection).
+- **Feedbacks visuels et sonores** pour tous les effets (icônes, tooltips, animations, sons, log de combat).
+- **Tests d'intégration** réalisés pour chaque famille et effet avancé.
+- **Documentation, conventions, changelog** à jour.
+- **Code robuste, typé, modulaire, prêt à l'extension** (nouvelles familles, équilibrages, nouveaux effets, etc.).
+
+## Pour reprendre ou étendre :
+- Le projet est prêt à l'emploi, à l'extension ou à l'équilibrage.
+- Pour toute évolution : ajouter de nouveaux effets, familles, mécaniques, ou améliorer l'UX/feedback selon les besoins.
+- Toujours respecter les conventions de feedback, robustesse, et logging.
+
+## Structure et modernisation
+- Code refactoré, typé, chaque écran dans un fichier dédié, navigation centralisée.
+- Composants réutilisables (StyledButton, CardWidget, StatsPanel, etc.).
+- Gestion du mana centralisée, robustesse accrue, méthodes factorisées.
+
+## Decks et héros personnalisables
+- Deck = 1 héros personnalisable, 4 unités sur le terrain, le reste en main/pioche.
+- Editeur de deck complet (héros, unités, autres cartes, sauvegarde JSON).
+
+## Combat et UI
+- CombatScreen affiche héros, unités, PV, log, bouton "Tour suivant".
+- Logique de combat : chaque joueur commence avec héros + 4 unités, pioche initiale de 5 cartes, 1 carte/tour.
+- Activation du héros (bouton, coût, feedback visuel, mana).
+- Abandon propre (timer stoppé, retour menu).
+
+## Effets spéciaux/statuts
+- CardWidget : animation d'apparition (zoom), surbrillance (glow), secousse (shake), flash, heal_glow.
+- Aura colorée selon effet : boost (jaune), poison (violet), shield (bleu), freeze (cyan).
+- Icônes d'effets spéciaux en overlay, tooltip explicatif sur chaque icône.
+- Tooltip global listant tous les effets actifs sur la carte.
+- Effets temporaires gérés par status_effects = [{'type': str, 'duration': int}].
+- Décrément automatique à chaque tour, suppression à 0, feedback log + animation + effet secondaire (ex : poison inflige 1 dégât à l'expiration).
+
+## Accessibilité et polish
+- Navigation clavier complète (tab, flèches, Entrée/Espace pour sélectionner/attaquer).
+- Feedback visuel focus (bordure verte), feedback cible (bordure rouge animée).
+- Boutons avec tooltips explicites, feedback visuel focus/survol.
+- Historique du log : scroll auto, sélection du dernier item.
+- Système de sons (attack, heal, effect_expire, victory, defeat) via CardWidget.play_sound().
+- Dossier CardGame2/ui/sounds/ pour les .wav.
+
+## IA et gameplay
+- IA joue ses sorts si mana, attaque logiquement, attaque héros si board adverse vide.
+- Gestion des statuts avancée : freeze bloque l'attaque, boost donne +ATK temporaire, shield soigne à l'expiration.
+
+## Convention code effets
+- Pour appliquer un effet temporaire :
+    unit.status_effects.append({'type': 'poison', 'duration': 2})
+- Pour un effet permanent :
+    unit.status_effects.append({'type': 'boost'})
+
+## À retenir pour la reprise
+- Lire ce fichier pour retrouver l'état UX/UI, conventions, et automatisations en place.
+- Les nouveaux effets ou polish doivent suivre ce modèle (aura, icône, tooltip, feedback visuel/sonore, gestion durée, effet secondaire à l'expiration).
+
+=== CONTEXTE DU PROJET CARDGAME2 ===
+
+1. Structure du projet :
+- D:/CardGameWorkspace/CardGame2Project/
+    - CardGame2/ (code source du jeu)
+        - main.py, ui_app.py, data_manager.py, etc.
+        - sets/, models/, boosters/, combat/, utils/, players/
+    - requirements.txt (PyQt5, Python >= 3.8)
+    - README.md
+
+2. Stack technique :
+- Python 3.8+
+- PyQt5 pour l'interface graphique (UI moderne, évolutive)
+- Sauvegarde locale en JSON (data_manager.py), architecture prête pour migration serveur/API
+
+3. Fonctionnalités principales :
+- Login joueur (un profil par login)
+- Menu principal graphique
+- Création/édition/sauvegarde de decks (max 5 decks, 20 cartes max, 2 exemplaires max par carte)
+- Boutique (achat de boosters à l'unité ou par 5, gestion de la monnaie, gain sur doublons)
+- Collection (affichage de toutes les cartes, possédées ou non, nombre d'exemplaires)
+- Jouer (sélection d'un deck, combat auto contre IA, attribution de récompenses selon victoire/défaite, bonus si 15 tours ou plus)
+- Navigation fluide entre tous les écrans
+
+4. Règles et mécaniques :
+- 8 cartes par booster
+- 2 exemplaires max d'une carte dans la collection (si doublon, gain de 10% du prix d'un booster)
+- Monnaie fictive :
+    - Gain de 20% du prix d'un booster en cas de victoire
+    - Gain de 10% en cas de défaite
+    - Récompense doublée si le combat dure 15 tours ou plus
+- Decks : 5 decks max, 20 cartes max, 2 exemplaires max par carte
+
+5. Préparé pour :
+- Ajout d'images de cartes (UI prête à afficher des images)
+- Migration future vers une sauvegarde serveur/API
+- Ajout d'un mode multi (hotseat ou réseau)
+
+6. Pour relancer l'UI graphique :
+- Se placer dans D:/CardGameWorkspace/CardGame2Project
+- Lancer : python -m CardGame2.ui_app
+
+7. Pour tester PyQt5 :
+- Créer un fichier test_pyqt.py avec un QLabel simple et lancer python test_pyqt.py
+
+8. Dernière version :
+- Toutes les fonctionnalités principales sont interactives et persistantes dans l'UI.
+
+=== FIN CONTEXTE ===
+
+=== GROS CHANTIER 2024 (améliorations majeures IA) ===
+
+1. Accessibilité :
+- Ajout systématique de setAccessibleName sur tous les widgets interactifs (boutons, listes, onglets, etc.) dans tous les écrans principaux.
+- Vérification et enrichissement des tooltips pour chaque élément interactif.
+- Navigation clavier optimisée (tab, flèches, Entrée/Espace, feedback focus/cible).
+
+2. UX & Feedback utilisateur :
+- Notifications/toasts ajoutés ou améliorés partout où il manquait du feedback utilisateur (actions importantes, erreurs, succès).
+- Intégration d'un onboarding de base (popup d'aide au premier lancement ou via F1) dans chaque écran principal.
+- Feedback visuel et sonore systématisé (animations, sons, popups).
+
+3. Modularité :
+- Extraction et factorisation de composants récurrents dans le module ui/components.py.
+- Centralisation des styles dans ui/style_constants.py (déjà fait à 100 %).
+- Nettoyage et factorisation du code pour éviter les duplications.
+
+4. Internationalisation :
+- Création d'un module de ressources textuelles (ui/resources.py) pour centraliser tous les textes de l'UI.
+- Remplacement progressif des chaînes en dur par des accès à ce module.
+- Préparation de la structure pour l'intégration de QTranslator (prêt pour la traduction multilingue).
+
+5. Check-up technique :
+- Vérification de la structure du projet (__init__.py présent, arborescence correcte).
+- Diagnostic des erreurs d'import (PyQt5 et CardGame2) et conseils pour le lancement.
+- Conseils pour lancer le jeu :
+    - cd D:/CardGameWorkspace/CardGame2Project
+    - python -m CardGame2.ui_app
+    - ou, depuis CardGame2/ : python main.py
+
+=== FIN GROS CHANTIER 2024 === 

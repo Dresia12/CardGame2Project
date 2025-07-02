@@ -1,0 +1,1982 @@
+[
+  {
+    "date": "2025-07-02T01:46:52.695533",
+    "cards": [
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Échidné Arbitraire",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Veuve d'Acide",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Goule Pestilentielle",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T01:46:54.261678",
+    "cards": [
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Ombre Prime",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Hibou Réfléteur",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Licorne Renaissance",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T01:46:55.779311",
+    "cards": [
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Hydre Infernale",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Sylve-Alpha",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Aiglon de Givre",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T01:46:57.372377",
+    "cards": [
+      {
+        "name": "Chouette Perceuse",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Garde d'Élite",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Lamantin de Résonance",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T01:48:40.120985",
+    "cards": [
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Griffon des Nues",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Grand Alizé",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Échidné Arbitraire",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T01:52:00.700259",
+    "cards": [
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Corbeau Maudit",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Kraken Illusoire",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Grand Alizé",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T01:52:01.964101",
+    "cards": [
+      {
+        "name": "Licorne Renaissance",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Géant de Basalte",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Hermine Boréale",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T01:55:37.832459",
+    "cards": [
+      {
+        "name": "Basilic du Temps Brisé",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Grand Griffon de Foudre",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Lamantin de Résonance",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T01:55:39.425300",
+    "cards": [
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Fouine de Nuit",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Chimère du Paradoxe",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Mégère Persécutée",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T02:08:14.674366",
+    "cards": [
+      {
+        "name": "Faon Bénit",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Fourmilion Incandescent",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Phoenix Gris",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T02:08:16.152792",
+    "cards": [
+      {
+        "name": "Tortue Miraculeuse",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Faon Runique",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T02:08:17.732712",
+    "cards": [
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Grand Griffon de Foudre",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Garde de la Balance",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Hydre Infernale",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T02:10:39.480593",
+    "cards": [
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Colosse Tellurique",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Croquéombre",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Mangouste Statique",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T02:12:56.684329",
+    "cards": [
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Faucon Fixeur",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Taupe Abysse",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Lapin Polyèdre",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T02:12:58.351715",
+    "cards": [
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Lysandre des Ronces",
+        "rarity": "SPECIAL",
+        "type": "HÉROS"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Lutin Hallucinant",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Lamantin de Résonance",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T02:12:59.684144",
+    "cards": [
+      {
+        "name": "Basilic du Temps Brisé",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Veuve d'Acide",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Griffon Crysalide",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T02:13:00.866368",
+    "cards": [
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Chaton Ferreux",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Hibou du Voile",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Grom le Roc",
+        "rarity": "SPECIAL",
+        "type": "HÉROS"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T02:13:02.385206",
+    "cards": [
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Méandra la Sinuée",
+        "rarity": "SPECIAL",
+        "type": "HÉROS"
+      },
+      {
+        "name": "Impe du Brasier",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Valkyrie du Blizzard",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T02:13:05.491914",
+    "cards": [
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Micro-Capricorne",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Sir Galvian, Régent Doré",
+        "rarity": "SPECIAL",
+        "type": "HÉROS"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Treant Majestueux",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T02:13:06.691335",
+    "cards": [
+      {
+        "name": "Valkyrie du Blizzard",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Garde d'Élite",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Croquéombre",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T02:13:07.712778",
+    "cards": [
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Armadillo Stalactite",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Elfe Brisesonge",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Échidné Arbitraire",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T02:13:09.224208",
+    "cards": [
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Séraphin du Solstice",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Taupe-taupin",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Fourmilion Incandescent",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T02:13:10.312906",
+    "cards": [
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Krakenoni",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Dryade Vénéneuse",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:37:32.056992",
+    "cards": [
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Sylphelette",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Mangouste Statique",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Cavalier Fulgurant",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:37:38.456680",
+    "cards": [
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Chevalier Légendaire",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Araignée Accordée",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:37:40.389373",
+    "cards": [
+      {
+        "name": "Dryade Vénéneuse",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Tortue Miraculeuse",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Kraken Illusoire",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:37:46.047884",
+    "cards": [
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Mulot de Fulgure",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Phoenix Gris",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Poisson-Glacier",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:37:48.128055",
+    "cards": [
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Maelia la Forge-Vie",
+        "rarity": "SPECIAL",
+        "type": "HÉROS"
+      },
+      {
+        "name": "Grand Griffon de Foudre",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Garde de la Balance",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:37:49.517724",
+    "cards": [
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Chevalier Lustré",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Hermine Boréale",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Grand Griffon de Foudre",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:48:29.574517",
+    "cards": [
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Raton Nocturne",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Phoenix Gris",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Pixie Copieuse",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:48:31.003236",
+    "cards": [
+      {
+        "name": "Élémental de Magma",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Treant Majestueux",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Seraphin du Matin",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:48:32.264777",
+    "cards": [
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Lysandre des Ronces",
+        "rarity": "SPECIAL",
+        "type": "HÉROS"
+      },
+      {
+        "name": "Luciole Lumiflash",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Ascalaphe à Facettes",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:48:33.402543",
+    "cards": [
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Tiksal Chronomancien",
+        "rarity": "SPECIAL",
+        "type": "HÉROS"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Grillon Sonique",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Hibou de Nécropole",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:48:34.814567",
+    "cards": [
+      {
+        "name": "Impe du Brasier",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Échidné Arbitraire",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Hydre Infernale",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:48:41.869782",
+    "cards": [
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Renarde Flamboyante",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Patient Papillon",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Manticore du Désordre",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:48:42.976066",
+    "cards": [
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Taupe Géante",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Léviathan Émeraude",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Souris Rayonnante",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:48:44.012021",
+    "cards": [
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Morticia l'Errante",
+        "rarity": "SPECIAL",
+        "type": "HÉROS"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Renarde Flamboyante",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Esprit du Glaçon",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:48:45.187105",
+    "cards": [
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Gecko Nomade",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Crépuscule Exilique",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Lion Choral",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:48:46.372709",
+    "cards": [
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Chérubin du Point du Jour",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Tigre du Futur",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Spectre Famine",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:57:05.231592",
+    "cards": [
+      {
+        "name": "Blaireau Tactique",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Griffon des Nues",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Basilic Épidémique",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:57:06.536052",
+    "cards": [
+      {
+        "name": "Esprit du Glaçon",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Sphinx d'Entropie",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Bouclier Magique",
+        "rarity": "UNCOMMON",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Tortue Miraculeuse",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:57:07.901909",
+    "cards": [
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Crépuscule Exilique",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Lutin Hallucinant",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Faucon Fixeur",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:57:09.174598",
+    "cards": [
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Ourson Acier",
+        "rarity": "UNCOMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Sylphide Harmonisante",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Phoenix Gris",
+        "rarity": "MYTHIC",
+        "type": "UNIT"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      }
+    ]
+  },
+  {
+    "date": "2025-07-02T07:57:10.482431",
+    "cards": [
+      {
+        "name": "Potion de Soin",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Dullahan Funeste",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Boule de Feu",
+        "rarity": "COMMON",
+        "type": "SPELL"
+      },
+      {
+        "name": "Géant de Basalte",
+        "rarity": "RARE",
+        "type": "UNIT"
+      },
+      {
+        "name": "Aura Mystique",
+        "rarity": "SPECIAL",
+        "type": "SPELL"
+      },
+      {
+        "name": "Pinson Universel",
+        "rarity": "COMMON",
+        "type": "UNIT"
+      },
+      {
+        "name": "Invocation du Dragon",
+        "rarity": "MYTHIC",
+        "type": "SPELL"
+      },
+      {
+        "name": "Épée Runique",
+        "rarity": "RARE",
+        "type": "EQUIPMENT"
+      }
+    ]
+  }
+]

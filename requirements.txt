@@ -1,0 +1,4 @@
+# CardGame2 requirements
+# Python >= 3.8 recommandé
+PyQt5>=5.15.0 
+psutil 

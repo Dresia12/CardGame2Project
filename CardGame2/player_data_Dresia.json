@@ -1,0 +1,32 @@
+{
+  "player_name": "Dresia",
+  "currency": 0,
+  "collection": {},
+  "decks": [
+    {
+      "hero": null,
+      "units": [],
+      "cards": []
+    },
+    {
+      "hero": null,
+      "units": [],
+      "cards": []
+    },
+    {
+      "hero": null,
+      "units": [],
+      "cards": []
+    },
+    {
+      "hero": null,
+      "units": [],
+      "cards": []
+    },
+    {
+      "hero": null,
+      "units": [],
+      "cards": []
+    }
+  ]
+}

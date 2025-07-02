@@ -1,0 +1,113 @@
+CardGame2 – Résumé du jeu
+========================
+
+1. But du jeu
+-------------
+CardGame2 est un jeu de cartes à collectionner et à deck-building, où chaque joueur affronte une IA (ou un autre joueur à terme) dans des combats automatisés, en utilisant un deck personnalisé composé d’un héros, d’unités, et d’autres cartes (sorts, équipements…).
+
+2. Règles de base (barèmes)
+---------------------------
+Unités & Héros
+- PV de base : 1000 (fragile < 1000, tanky > 1000)
+- ATK de base : 50 (faible < 50, fort > 50)
+- Cooldown d’attaque (CD) : 1 tour
+- Pas de coût en mana pour être déployé/joué
+- Rareté (appliquée sur les stats) :
+    - Commune : x1.00
+    - Peu commune : x1.05
+    - Rare : x1.10
+    - Mythique/Spécial : x1.15 (ou équilibrage spécifique)
+
+Sorts/Équipements
+- 1 mana ≃ 30–50 pts d'effet (dégâts, soin, buff)
+- Bonus de rareté appliqué au montant de l’effet (et non au coût en mana)
+
+Barème pour les stats de base du héros :
+- PV de base : 1000
+- ATK de base : 50
+- DEF de base : 0 (à personnaliser)
+- Les bonus de rareté s’appliquent aussi sur les stats de base si le héros est d’une rareté supérieure.
+
+3. Structure d’un deck
+----------------------
+- 1 héros personnalisable (statistiques, passifs, capacités)
+- 4 unités sur le terrain au départ
+- Main/pioche : le reste des cartes du deck (jusqu’à 20 cartes, 2 exemplaires max par carte)
+- Decks : chaque joueur peut avoir jusqu’à 5 decks sauvegardés
+
+4. Déroulement d’un combat
+--------------------------
+- Début de partie : chaque joueur commence avec son héros + 4 unités sur le board, et pioche 5 cartes.
+- Tour de jeu :
+  - Pioche 1 carte par tour
+  - Possibilité de jouer des cartes (si le mana le permet)
+  - Activation du héros (coût en mana, effet, cooldown)
+  - Attaques automatiques des unités (IA : attaque logique, cible la plus faible, attaque le héros adverse si le board est vide)
+- Mana : système centralisé, augmente chaque tour, limite le nombre d’actions/cartes jouées
+- Fin de partie : victoire si le héros adverse tombe à 0 PV
+
+5. Mécaniques principales
+-------------------------
+- Effets et statuts :
+  - Les cartes et unités peuvent recevoir des effets temporaires ou permanents (boost, poison, shield, freeze…)
+  - Les effets temporaires ont une durée, sont décrémentés chaque tour, et déclenchent un effet secondaire à l’expiration (ex : poison inflige 1 dégât à la fin)
+  - Feedback visuel (aura, animation, icône, tooltip) et sonore (sons d’attaque, soin, expiration d’effet…)
+- Accessibilité :
+  - Navigation clavier complète, feedback visuel de focus/cible, tooltips explicites
+- Feedback utilisateur :
+  - Notifications/toasts, popups d’aide, historique du log, sons, animations
+
+6. Progression et économie
+--------------------------
+- Boosters :
+  - 8 cartes par booster (2 unités, 5 sorts/équipements, 1 bonus)
+  - 2 exemplaires max d’une carte dans la collection (doublon = gain de monnaie)
+- Monnaie :
+  - Gagnée en combat (20% du prix d’un booster en cas de victoire, 10% en cas de défaite, bonus si le combat dure 15 tours ou plus)
+- Boutique :
+  - Achat de boosters à l’unité ou par 5, gestion des doublons
+
+7. Extensibilité
+----------------
+- Ajout de nouveaux effets, statuts, types de cartes, sets, héros, mécaniques très facile grâce à l’architecture modulaire et typée
+- Préparé pour : images de cartes, migration serveur/API, mode multi (hotseat/réseau), internationalisation
+
+8. IA
+-----
+- L’IA joue ses sorts si elle a le mana, attaque logiquement, cible le héros adverse si le board est vide, gère les statuts avancés (freeze, boost, shield…)
+
+9. Interface utilisateur
+------------------------
+- PyQt5 : UI moderne, fluide, avec feedback visuel et sonore systématisé
+- Tous les écrans : login, menu principal, création/édition de deck, boutique, collection, combat
+
+
+Cartes existantes (set de base, barème appliqué)
+===============================================
+
+Unités
+------
+- Soldat Vaillant : Unité, Commune, 1000 PV, 50 ATK, CD 1 tour
+- Archer Agile : Unité, Peu commune, 1000 PV, 63 ATK, CD 1 tour
+- Chevalier Légendaire : Unité, Rare, 1320 PV, 110 ATK, CD 1 tour
+- Garde d'Élite : Unité, Peu commune, 1208 PV, 79 ATK, CD 1 tour
+
+Sorts
+-----
+- Boule de Feu : Sort, Commune, 100 dégâts, 2 mana
+- Potion de Soin : Sort, Commune, 50 soin, 1 mana
+- Invocation du Dragon : Sort, Mythique, Invoque dragon (1610 PV, 173 ATK), 6 mana
+- Aura Mystique : Sort, Spécial, à équilibrer, 5 mana
+
+Équipements
+-----------
+- Bouclier Magique : Équipement, Peu commune, +105 PV, 2 mana
+- Épée Runique : Équipement, Rare, +110 ATK, 3 mana
+
+Héros (barème de base)
+----------------------
+- PV de base : 1000
+- ATK de base : 50
+- DEF de base : 0 (personnalisable)
+- Rareté : applique le bonus sur les stats de base si besoin
+- Personnalisation : bonus, passifs, capacités spéciales, coût d’activation, cooldown, etc. 
